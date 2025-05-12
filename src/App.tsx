@@ -12,9 +12,12 @@ import TableauDeBordPage from './pages/TableauDeBordPage';
 import Navigation from './components/Navigation';
 
 function App() {
+  // Définir le basename pour GitHub Pages
+  const basename = import.meta.env.DEV ? '/' : '/SImulateurIntermittece';
+  
   return (
     <IntermittenceProvider>
-      <Router>
+      <Router basename={basename}>
         <div className="min-h-screen bg-gray-100">
           <div className="flex flex-col md:flex-row">
             {/* Sidebar pour la navigation */}
