@@ -356,7 +356,6 @@ const TableauDeBordPage: React.FC = () => {
             const alternePosition = index % 2 === 0 ? "mt-2" : "mt-5";
             
             // Ne pas afficher si trop proche des marqueurs importants
-            const positionIndemnisable = 0; // Maintenant c'est le point de départ (0%)
             const tropProcheDuDebut = position < 5;
             const tropProcheDeLaFin = position > 95;
             
