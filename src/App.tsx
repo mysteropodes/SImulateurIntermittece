@@ -13,7 +13,8 @@ import Navigation from './components/Navigation';
 
 function App() {
   // Définir le basename pour GitHub Pages
-  const basename = import.meta.env.DEV ? '/' : '/SImulateurIntermittece';
+  const isDev = import.meta.env.MODE === 'development';
+  const basename = isDev ? '/' : '/SImulateurIntermittece';
   
   return (
     <IntermittenceProvider>
