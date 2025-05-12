@@ -2,6 +2,8 @@
 
 Cette application web permet aux intermittents du spectacle de simuler leur situation, de calculer leur allocation journalière, et de visualiser leurs revenus mois par mois.
 
+Application accessible en ligne : [Simulateur d'Intermittence](https://mysteropodes.github.io/SimulateurIntermitence/)
+
 ## Fonctionnalités
 
 - **Synthèse** : Vue d'ensemble de votre situation
