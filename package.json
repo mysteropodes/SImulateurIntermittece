@@ -2,7 +2,7 @@
   "name": "intermittence-excel-generator",
   "version": "1.0.0",
   "type": "module",
-  "homepage": "https://mysteropodes.github.io/SImulateurIntermittece",
+  "homepage": "https://mysteropodes.github.io/SimulateurIntermitence",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
