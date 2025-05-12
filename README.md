@@ -2,7 +2,7 @@
 
 Cette application web permet aux intermittents du spectacle de simuler leur situation, de calculer leur allocation journalière, et de visualiser leurs revenus mois par mois.
 
-Application accessible en ligne : [Simulateur d'Intermittence](https://mysteropodes.github.io/SimulateurIntermitence/)
+Application accessible en ligne : [Simulateur d'Intermittence](https://mysteropodes.github.io/SImulateurIntermittece/)
 
 ## Fonctionnalités
 
@@ -12,6 +12,19 @@ Application accessible en ligne : [Simulateur d'Intermittence](https://mysteropo
 - **Suivi Mensuel** : Visualisation mois par mois des revenus et indemnités
 - **Tableau de Bord** : Graphiques et statistiques sur votre intermittence
 - **Frise Chronologique** : Visualisation des dates clés de votre intermittence
+
+## Protection des données
+
+**Important** : Cette application respecte entièrement votre vie privée.
+- Toutes les données sont stockées uniquement sur votre ordinateur local
+- Aucune information n'est envoyée ni conservée sur des serveurs distants
+- À chaque utilisation, vous devez sauvegarder et réimporter vos données
+- L'application n'utilise pas de cookies ni de trackers
+
+Pour conserver vos informations entre deux sessions :
+1. Utilisez le bouton "Exporter" pour télécharger vos données au format JSON
+2. Conservez ce fichier sur votre ordinateur
+3. Utilisez le bouton "Importer" lors de votre prochaine visite
 
 ## Caractéristiques principales
 
