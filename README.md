@@ -1,42 +1,3 @@
-# Simulateur d'Intermittence
-
-Application web qui permet de simuler les conditions d'intermittence du spectacle, en calculant les indemnités, franchises et autres paramètres importants pour les intermittents.
-
-## Fonctionnalités
-
-- Calcul des droits à l'allocation chômage
-- Gestion des contrats et des heures travaillées
-- Visualisation d'une frise chronologique des dates clés
-- Suivi mensuel des revenus et indemnisations
-- Tableau de bord avec visualisations
-- Import/Export des données
-
-## Installation
-
-```bash
-npm install
-```
-
-## Démarrage
-
-```bash
-npm run dev
-```
-
-## Build
-
-```bash
-npm run build
-```
-
-## Technologies utilisées
-
-- React
-- TypeScript
-- TailwindCSS
-- Vite
-- Lucide Icons
-
 # Simulateur d'Intermittence du Spectacle
 
 Cette application web permet aux intermittents du spectacle de simuler leur situation, de calculer leur allocation journalière, et de visualiser leurs revenus mois par mois.
@@ -48,7 +9,7 @@ Cette application web permet aux intermittents du spectacle de simuler leur situ
 - **Contrats** : Saisie et gestion des contrats avec conversion automatique Cachets/Heures
 - **Suivi Mensuel** : Visualisation mois par mois des revenus et indemnités
 - **Tableau de Bord** : Graphiques et statistiques sur votre intermittence
-- **Export Excel** : Génération d'un fichier Excel complet
+- **Frise Chronologique** : Visualisation des dates clés de votre intermittence
 
 ## Caractéristiques principales
 
@@ -65,12 +26,14 @@ Cette application web permet aux intermittents du spectacle de simuler leur situ
 npm install
 
 # Lancer l'application en mode développement
-npm start
+npm run dev
 ```
 
-## Sauvegarde des données
+## Build
 
-Toutes les données peuvent être exportées au format JSON et réimportées ultérieurement.
+```bash
+npm run build
+```
 
 ## Règles appliquées
 
