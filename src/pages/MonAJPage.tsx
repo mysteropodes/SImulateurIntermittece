@@ -183,6 +183,22 @@ const MonAJPage: React.FC = () => {
               <span>€</span>
             </div>
           </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Taux de prélèvement à la source</label>
+            <div className="flex items-center">
+              <input 
+                type="number" 
+                min="0"
+                max="100"
+                value={data.tauxPrelevement} 
+                onChange={e => updateField('tauxPrelevement', e.target.value)} 
+                className="border bg-yellow-50 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-32 mr-2" 
+              />
+              <span>%</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Taux applicable sur l'allocation journalière (0% par défaut)</p>
+          </div>
         </div>
       </div>
       

@@ -21,6 +21,7 @@ interface IntermittenceData {
   joursSalaires: string;
   ajNette: string;
   ajBrute: string;
+  tauxPrelevement: string;
   // Liste des contrats
   contrats: Contrat[];
 }
@@ -52,6 +53,7 @@ const defaultData: IntermittenceData = {
   joursSalaires: '',
   ajNette: '',
   ajBrute: '',
+  tauxPrelevement: '0',
   contrats: [
     { date: '2024-01-01', employeur: 'Théâtre ABC', type: 'Cachet', nombre: 2, brut: 600 },
     { date: '2024-01-15', employeur: 'Production XYZ', type: 'Heures', nombre: 35, brut: 875 },

@@ -28,26 +28,31 @@ const SynthesePage: React.FC = () => {
     const heures = calculHeures();
     const sjr = calculeSJR();
     
-    if (heures < 507 || sjr <= 0) return { eligible: false, aj: 0, ajBrute: 0, plafond: 0, plancher: 0 };
+    if (heures < 507 || sjr <= 0) return { eligible: false, aj: 0, ajBrute: 0, plafond: 0, plancher: 0, ajApresPrelevement: 0 };
     
     const ajBrute = 31.98 + sjr * 0.404;
     const plafond = sjr * 0.75;
     const plancher = Math.max(sjr * 0.57, 31.98);
     const aj = Math.min(plafond, Math.max(plancher, ajBrute));
     
+    // Calcul de l'AJ après prélèvement à la source
+    const tauxPrelevement = data.tauxPrelevement ? parseFloat(data.tauxPrelevement) : 0;
+    const ajApresPrelevement = aj * (1 - tauxPrelevement / 100);
+    
     return {
       eligible: true,
       aj,
       ajBrute,
       plafond,
-      plancher
+      plancher,
+      ajApresPrelevement
     };
   };
   
   const totalHeures = calculHeures();
   const joursTravailles = calculJoursTravailles();
   const sjr = calculeSJR();
-  const { eligible, aj, plafond, plancher } = calculerAJ();
+  const { eligible, aj, plafond, plancher, ajApresPrelevement } = calculerAJ();
   
   // Période de référence
   const periodeRef = () => {
@@ -125,6 +130,11 @@ const SynthesePage: React.FC = () => {
               <div className="text-sm text-gray-600">AJ brute (saisie)</div>
               <div className="text-lg font-bold">{data.ajBrute ? `${data.ajBrute} €` : '-'}</div>
             </div>
+            
+            <div>
+              <div className="text-sm text-gray-600">Taux prélèvement</div>
+              <div className="text-lg font-bold">{data.tauxPrelevement ? `${data.tauxPrelevement} %` : '0 %'}</div>
+            </div>
           </div>
           
           {totalHeures < 507 && (
@@ -176,8 +186,13 @@ const SynthesePage: React.FC = () => {
                 </div>
                 
                 <div className="col-span-2">
+                  <div className="text-sm text-gray-600">AJ après prélèvement à la source ({data.tauxPrelevement || "0"}%)</div>
+                  <div className="text-lg font-bold">{ajApresPrelevement.toFixed(2)} €/jour</div>
+                </div>
+                
+                <div className="col-span-2">
                   <div className="text-sm text-gray-600">ARE mensuelle estimée (20j)</div>
-                  <div className="text-lg font-bold">{(aj * 20).toFixed(2)} €/mois</div>
+                  <div className="text-lg font-bold">{(ajApresPrelevement * 20).toFixed(2)} €/mois</div>
                 </div>
               </>
             )}

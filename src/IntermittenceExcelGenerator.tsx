@@ -17,6 +17,7 @@ export default function IntermittenceExcelGenerator() {
   const [joursSalaires, setJoursSalaires] = useState('');
   const [ajNette, setAjNette] = useState('');
   const [ajBrute, setAjBrute] = useState('');
+  const [tauxPrelevement, setTauxPrelevement] = useState('0');
 
   // Ajout d'un état pour la liste des contrats modifiables
   const [contrats, setContrats] = useState([
@@ -452,6 +453,7 @@ export default function IntermittenceExcelGenerator() {
         ['À raison de (jours par mois) - Salaires', joursSalaires],
         ['A.J. nette Imposable', ajNette],
         ['A.J. Brute', ajBrute],
+        ['Taux de prélèvement à la source', tauxPrelevement + ' %'],
       ];
       syntheseSheet.addRow(['Synthèse des données saisies', '']).font = { bold: true, size: 14 };
       syntheseSheet.mergeCells('A1:B1');
@@ -646,6 +648,21 @@ export default function IntermittenceExcelGenerator() {
               <div className="flex items-center">
                 <input type="number" value={ajBrute} onChange={e => setAjBrute(e.target.value)} className="border rounded px-2 py-1 w-32 mr-2" />
                 <span>€</span>
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Taux de prélèvement à la source</label>
+              <div className="flex items-center">
+                <input 
+                  type="number" 
+                  min="0" 
+                  max="100" 
+                  value={tauxPrelevement} 
+                  onChange={e => setTauxPrelevement(e.target.value)} 
+                  className="border rounded px-2 py-1 w-32 mr-2" 
+                />
+                <span>%</span>
               </div>
             </div>
           </div>
