@@ -2,13 +2,13 @@
   "name": "intermittence-excel-generator",
   "version": "1.0.0",
   "type": "module",
-  "homepage": "https://mysteropodes.github.io/SimulateurIntermitence",
+  "homepage": "https://mysteropodes.github.io/SImulateurIntermittece",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist --repo https://github.com/mysteropodes/SimulateurIntermitence.git"
+    "deploy": "gh-pages -d dist --repo https://github.com/mysteropodes/SImulateurIntermittece.git"
   },
   "dependencies": {
     "@mantine/core": "^8.0.0",
