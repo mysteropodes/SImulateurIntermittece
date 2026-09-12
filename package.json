@@ -5,7 +5,7 @@
   "homepage": "https://mysteropodes.github.io/SImulateurIntermittece",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && cp dist/index.html dist/404.html",
     "preview": "vite preview",
     "test": "vitest run",
     "predeploy": "npm run build",
