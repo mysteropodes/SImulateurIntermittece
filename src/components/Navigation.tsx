@@ -6,7 +6,8 @@ import {
   PieChart, 
   Calendar, 
   Database, 
-  ChevronRight 
+  ChevronRight,
+  FileSpreadsheet
 } from 'lucide-react';
 
 const Navigation: React.FC = () => {
@@ -45,6 +46,12 @@ const Navigation: React.FC = () => {
       <Link to="/tableau-de-bord" className={`flex items-center px-4 py-2 rounded-md ${isActive('/tableau-de-bord')}`}>
         <PieChart className="w-5 h-5 mr-3" />
         <span>Tableau de Bord</span>
+        <ChevronRight className="w-4 h-4 ml-auto" />
+      </Link>
+      
+      <Link to="/export" className={`flex items-center px-4 py-2 rounded-md ${isActive('/export')}`}>
+        <FileSpreadsheet className="w-5 h-5 mr-3" />
+        <span>Export Excel</span>
         <ChevronRight className="w-4 h-4 ml-auto" />
       </Link>
     </nav>

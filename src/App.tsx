@@ -7,14 +7,14 @@ import MonAJPage from './pages/MonAJPage';
 import ContratsPage from './pages/ContratsPage';
 import SuiviMensuelPage from './pages/SuiviMensuelPage';
 import TableauDeBordPage from './pages/TableauDeBordPage';
+import ExportExcelPage from './pages/ExportExcelPage';
 
 // Components
 import Navigation from './components/Navigation';
 
 function App() {
   // Définir le basename pour GitHub Pages
-  const isDev = import.meta.env.MODE === 'development';
-  const basename = isDev ? '/' : '/SImulateurIntermittece';
+  const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
   
   return (
     <IntermittenceProvider>
@@ -38,6 +38,7 @@ function App() {
                 <Route path="/contrats" element={<ContratsPage />} />
                 <Route path="/suivi-mensuel" element={<SuiviMensuelPage />} />
                 <Route path="/tableau-de-bord" element={<TableauDeBordPage />} />
+                <Route path="/export" element={<ExportExcelPage />} />
               </Routes>
             </div>
           </div>

@@ -1,9 +1,9 @@
 import React, { useRef } from 'react';
 import { useIntermittence } from '../context/IntermittenceContext';
-import { Upload, Save } from 'lucide-react';
+import { Upload, Save, RotateCcw } from 'lucide-react';
 
 const ImportExportBar: React.FC = () => {
-  const { exportData, importData } = useIntermittence();
+  const { exportData, importData, resetData } = useIntermittence();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImportClick = () => {
@@ -47,6 +47,15 @@ const ImportExportBar: React.FC = () => {
       >
         <Upload className="w-4 h-4 mr-2" />
         Importer JSON
+      </button>
+      
+      <button
+        onClick={resetData}
+        className="flex items-center px-3 py-2 text-gray-500 rounded hover:bg-gray-100 transition duration-200"
+        title="Effacer toutes les données"
+      >
+        <RotateCcw className="w-4 h-4 mr-2" />
+        Réinitialiser
       </button>
       
       <input
