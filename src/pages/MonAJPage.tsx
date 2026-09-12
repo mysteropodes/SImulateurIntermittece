@@ -40,15 +40,20 @@ const MonAJPage: React.FC = () => {
             <option value="A10">Artiste (annexe 10)</option>
           </select>
 
-          <label className="block text-sm font-medium mb-1">Fin du contrat de référence</label>
+          <label className="block text-sm font-medium mb-1">Fin du contrat ayant ouvert le droit</label>
           <input type="date" value={data.dateFinContrat} onChange={(e) => updateField('dateFinContrat', e.target.value)} className={`w-full ${input}`} />
-          <p className="text-xs text-gray-500 mt-1 mb-4">
-            Fin de la période de recherche des 507 h (12 mois glissants). Vide = fin du contrat le plus récent.
-          </p>
+          <p className="text-xs text-gray-500 mt-1 mb-4">Facultatif : sert de valeur par défaut au début du droit (lendemain).</p>
 
           <label className="block text-sm font-medium mb-1">Indemnisable à partir du</label>
           <input type="date" value={data.dateIndem} onChange={(e) => updateField('dateIndem', e.target.value)} className={`w-full ${input}`} />
-          <p className="text-xs text-gray-500 mt-1 mb-4">Vide = lendemain de la fin du contrat de référence.</p>
+          <p className="text-xs text-gray-500 mt-1 mb-4">Début du droit en cours. Vide = lendemain du contrat ayant ouvert le droit, sinon du dernier contrat.</p>
+
+          <label className="block text-sm font-medium mb-1">Figer la fin de la période de référence</label>
+          <input type="date" value={data.dateFinPRA} onChange={(e) => updateField('dateFinPRA', e.target.value)} className={`w-full ${input}`} />
+          <p className="text-xs text-gray-500 mt-1 mb-4">
+            Facultatif. Par défaut, les 507 h sont recherchées sur les 12 mois qui précèdent la fin de votre dernier contrat — c'est ce que France Travail
+            examinera à la date anniversaire. Renseignez une date pour figer la période (ex. rejouer l'ouverture d'un ancien droit).
+          </p>
 
           <div className="flex items-center">
             <span className="mr-3 text-sm font-medium">Délai d'attente de 7 jours</span>

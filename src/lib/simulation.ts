@@ -54,7 +54,7 @@ const toNum = (s: string, fallback = 0): number => {
 };
 
 export function simulation(data: IntermittenceData, aujourdHui = new Date()): Simulation {
-  const aff = affiliation(data.contrats, data.annexe, data.dateFinContrat);
+  const aff = affiliation(data.contrats, data.annexe, data.dateFinPRA || undefined);
   const ajCalculee = calculAJ(data.annexe, aff.sr, aff.nht);
   const sjmValeur = sjm(data.annexe, aff.sr, aff.nht);
   const smic = smicAt(aff.periode.fin);

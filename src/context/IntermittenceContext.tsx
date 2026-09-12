@@ -4,8 +4,10 @@ import type { Annexe, Contrat } from '../lib/calculs';
 export interface IntermittenceData {
   version: 2;
   annexe: Annexe;
-  /** Fin du contrat de travail de référence (fin de la PRA). */
+  /** Fin du contrat ayant ouvert le droit en cours (sert de défaut au début du droit). */
   dateFinContrat: string;
+  /** Facultatif : fige la fin de la période de référence (sinon = fin du dernier contrat). */
+  dateFinPRA: string;
   /** Premier jour indemnisable (début du droit). */
   dateIndem: string;
   delaiAttente: boolean;
@@ -49,6 +51,7 @@ export const defaultData: IntermittenceData = {
   version: 2,
   annexe: 'A8',
   dateFinContrat: '',
+  dateFinPRA: '',
   dateIndem: '',
   delaiAttente: false,
   ajBruteNotifiee: '',
@@ -117,6 +120,7 @@ export function migrate(raw: unknown): IntermittenceData {
     version: 2,
     annexe,
     dateFinContrat: str(r.dateFinContrat),
+    dateFinPRA: str(r.dateFinPRA),
     dateIndem: str(r.dateIndem),
     delaiAttente: !!r.delaiAttente,
     ajBruteNotifiee: str(r.ajBruteNotifiee ?? (v1 ? r.ajBrute : '')),
