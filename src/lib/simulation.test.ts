@@ -34,9 +34,12 @@ describe('simulation : droit en cours et contrats postérieurs', () => {
   });
 
   it('le délai d’attente se consomme sur les premiers jours indemnisables (4 en décembre, 3 en janvier)', () => {
-    const s = simulation(data, new Date(2026, 8, 12));
+    // 50 h en janvier → 8 jours non indemnisables, il reste des jours pour finir le délai
+    const s = simulation({ ...data, contrats: [c('2026-01-10', 50, 1650), ...data.contrats.slice(1)] }, new Date(2026, 8, 12));
     expect(s.suivi.mois[0].label).toBe('12/2025');
     expect(s.suivi.mois[0].delaiAttente).toBe(4);
     expect(s.suivi.mois[1].delaiAttente).toBe(3);
+    // janvier : forfait CP (2) + reliquat de décembre (2) si franchise auto > 0, sinon rien
+    expect(s.suivi.mois[1].joursIndemnises).toBe(31 - 8 - 3 - s.suivi.mois[1].franchiseCP - s.suivi.mois[1].franchiseSal);
   });
 });
