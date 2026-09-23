@@ -4,6 +4,7 @@ import { useSimulation } from '../hooks/useSimulation';
 import { Plus, Trash2, AlertTriangle, Info } from 'lucide-react';
 import { Card, Kpi, Notice, Badge, PageHeader, Aide, eur, nb } from '../components/ui';
 import { TYPES, GROUPES } from '../lib/typesContrat';
+import ExamenAnniversaire from '../components/ExamenAnniversaire';
 import {
   heuresContrat,
   estSpectacle,
@@ -75,6 +76,8 @@ const ContratsPage: React.FC = () => {
           sub={`cours ${nb(aff.heuresEnseignement, 1)} h (max ${plafondEns}) · formation ${nb(aff.heuresFormation, 1)} h`}
         />
       </div>
+
+      <ExamenAnniversaire compact />
 
       {aff.moisPlafonnes.length > 0 && (
         <Notice tone="warn" icon={<AlertTriangle className="h-4 w-4" />}>

@@ -129,6 +129,11 @@ const SuiviMensuelPage: React.FC = () => {
                       <span className="ml-1.5 text-xs text-slate-400">
                         {m.joursHorsDroit > 0 && !horsDroit ? `${m.joursDansMois - m.joursHorsDroit}/${m.joursDansMois} j` : `${m.joursDansMois} j`}
                         {m.joursArret > 0 && <span className="ml-1 text-amber-600">· {m.joursArret} j arrêt</span>}
+                        {m.cle === sim.dateAnniversaire.slice(0, 7) && (
+                          <span className="ml-1.5 inline-flex rounded-full bg-lime-300 px-2 py-0.5 text-[10px] font-semibold text-brand-900" title="Date anniversaire : évitez un contrat spectacle en cours ce jour-là">
+                            anniversaire le {Number(sim.dateAnniversaire.slice(8, 10))}
+                          </span>
+                        )}
                       </span>
                     </td>
                     <td className="px-2 py-2 text-right">{cell(m.heures, 1)}</td>
