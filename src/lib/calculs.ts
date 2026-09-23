@@ -17,7 +17,25 @@ export type Annexe = 'A8' | 'A10';
  * dans les NHT du calcul de l'AJ (guide p. 7 et 11). Elles restent une
  * activité déclarée pour le cumul mensuel.
  */
-export type TypeContrat = 'Cachet' | 'Heures' | 'Enseignement';
+export type TypeContrat =
+  | 'Cachet'
+  | 'Heures'
+  | 'Enseignement'
+  /** Salarié hors spectacle (régime général) : réduit l'ARE du mois, ne compte pas pour les 507 h. */
+  | 'RegimeGeneral'
+  /** Activité non salariée (auto-entreprise…) : heures = revenu brut ÷ SMIC horaire (guide p. 16). */
+  | 'NonSalarie'
+  /** Arrêt maladie longue durée, accident du travail prolongé, maternité / adoption hors contrat : 5 h par jour (guide p. 9). `nombre` = jours. */
+  | 'Arret'
+  /** Formation non rémunérée par l'assurance chômage (Afdas…) : compte pour les 507 h, avec l'enseignement, jusqu'à 338 h. */
+  | 'Formation';
+
+/** Contrats du spectacle (annexes 8 et 10) : comptent dans le SR, les NHT et les Congés Spectacles. */
+export const estSpectacle = (c: Pick<Contrat, 'type'>) => c.type === 'Cachet' || c.type === 'Heures';
+/** Activités qui réduisent l'ARE du mois (cumul) : tout travail rémunéré. */
+export const estActivite = (c: Pick<Contrat, 'type'>) => c.type !== 'Arret' && c.type !== 'Formation';
+/** Salaires (toutes rémunérations salariées), pour la franchise salaires, les IJ et la retraite. */
+export const estSalaire = (c: Pick<Contrat, 'type'>) => estSpectacle(c) || c.type === 'Enseignement' || c.type === 'RegimeGeneral';
 
 export interface Contrat {
   id: string;
@@ -27,6 +45,8 @@ export interface Contrat {
   type: TypeContrat;
   nombre: number;
   brut: number;
+  /** Annexe du contrat, si différente de l'annexe générale (activités mixtes). */
+  annexe?: Annexe;
 }
 
 // ---------------------------------------------------------------------------
@@ -61,6 +81,10 @@ export const PLAFOND_ENSEIGNEMENT_50_ANS = 120;
 /** Seuils de la formule : au-delà, la partie A (salaire) et la partie B (heures) progressent beaucoup moins. */
 export const SEUIL_SR: Record<Annexe, number> = { A8: 14400, A10: 13700 };
 export const SEUIL_NHT: Record<Annexe, number> = { A8: 720, A10: 690 };
+/** Formation + enseignement retenus au plus pour 338 h (2/3 de 507 h). */
+export const PLAFOND_FORMATION_ENSEIGNEMENT = 338;
+/** Heures par jour d'arrêt assimilé (maladie longue, AT, maternité hors contrat). */
+export const HEURES_PAR_JOUR_ARRET = 5;
 /** Délai d'attente à chaque ouverture / réadmission (max 7 j par 12 mois). */
 export const DELAI_ATTENTE = 7;
 /** Franchise congés payés : 2,5 jours par 24 jours travaillés, plafonnée à 30 jours. */
@@ -167,12 +191,31 @@ export function formatDateFR(d: Date | string): string {
 // Contrats
 // ---------------------------------------------------------------------------
 
-export function heuresContrat(c: Pick<Contrat, 'type' | 'nombre'>): number {
-  return c.type === 'Cachet' ? c.nombre * HEURES_PAR_CACHET : c.nombre; // Heures et Enseignement : en heures
+export function heuresContrat(c: Pick<Contrat, 'type' | 'nombre'> & Partial<Pick<Contrat, 'brut' | 'date'>>): number {
+  switch (c.type) {
+    case 'Cachet':
+      return c.nombre * HEURES_PAR_CACHET;
+    case 'Arret':
+      return c.nombre * HEURES_PAR_JOUR_ARRET;
+    case 'NonSalarie':
+      return (c.brut ?? 0) / smicAt(c.date ?? toISODate(new Date())).horaire;
+    default:
+      return c.nombre;
+  }
 }
 
 export function finContrat(c: Contrat): string {
-  return c.dateFin && c.dateFin >= c.date ? c.dateFin : c.date;
+  if (c.dateFin && c.dateFin >= c.date) return c.dateFin;
+  // un arrêt sans date de fin dure `nombre` jours
+  if (c.type === 'Arret' && c.nombre > 1) return toISODate(addDays(parseDate(c.date), Math.round(c.nombre) - 1));
+  return c.date;
+}
+
+/** Jours d'un contrat (ou d'un arrêt) compris entre deux dates incluses. */
+export function joursEntre(c: Contrat, debut: string, fin: string): number {
+  const a = c.date > debut ? c.date : debut;
+  const b = finContrat(c) < fin ? finContrat(c) : fin;
+  return b >= a ? Math.round((parseDate(b).getTime() - parseDate(a).getTime()) / 86400000) + 1 : 0;
 }
 
 export interface PartMois {
@@ -220,9 +263,13 @@ export function repartirContrat(c: Contrat): PartMois[] {
 }
 
 /** Agrège les contrats par mois civil (sans plafonnement). */
-export function agregerParMois(contrats: Contrat[]): Map<string, PartMois & { employeurs: Set<string> }> {
+export function agregerParMois(
+  contrats: Contrat[],
+  filtre: (c: Contrat) => boolean = estActivite
+): Map<string, PartMois & { employeurs: Set<string> }> {
   const map = new Map<string, PartMois & { employeurs: Set<string> }>();
   for (const c of contrats) {
+    if (!filtre(c)) continue;
     for (const p of repartirContrat(c)) {
       const cur = map.get(p.cle);
       if (cur) {
@@ -252,7 +299,9 @@ export interface PeriodeReference {
 export function periodeReference(contrats: Contrat[], dateFinContrat?: string): PeriodeReference {
   let fin = dateFinContrat && dateFinContrat.length === 10 ? dateFinContrat : '';
   if (!fin) {
-    fin = contrats.reduce((max, c) => (finContrat(c) > max ? finContrat(c) : max), '');
+    // fin du dernier contrat du spectacle (un arrêt, une formation ou un emploi hors spectacle ne fixe pas la période)
+    const spectacle = contrats.filter(estSpectacle);
+    fin = (spectacle.length ? spectacle : contrats).reduce((max, c) => (finContrat(c) > max ? finContrat(c) : max), '');
   }
   if (!fin) fin = toISODate(new Date());
   const finDate = parseDate(fin);
@@ -275,8 +324,20 @@ export interface Affiliation {
   heuresAffiliation: number;
   /** Salaire de référence (SR) : bruts des contrats retenus, hors enseignement. */
   sr: number;
+  /** SR avant aménagement pour arrêt (égal à sr sans arrêt). */
+  srBrut: number;
   /** Salaires d'enseignement dans la PRA (hors SR, mais comptés pour la franchise salaires). */
   brutEnseignement: number;
+  /** Salaires hors spectacle dans la PRA (régime général). */
+  brutAutres: number;
+  heuresFormation: number;
+  heuresFormationRetenues: number;
+  /** Arrêts assimilés : jours dans la PRA et heures retenues (5 h / jour). */
+  heuresArret: number;
+  joursArret: number;
+  /** Heures spectacle par annexe, et annexe qui en a le plus (guide, exemple 3). */
+  heuresParAnnexe: Record<Annexe, number>;
+  annexeMajoritaire: Annexe;
   /** Jours de travail = NHT / 8 (A8) ou / 10 (A10). */
   joursTravail: number;
   eligible: boolean;
@@ -311,7 +372,18 @@ export function affiliation(
   let sr = 0;
   let heuresEnseignement = 0;
   let brutEnseignement = 0;
+  let heuresFormation = 0;
+  let heuresArret = 0;
+  let joursArret = 0;
+  let brutAutres = 0;
+  const heuresParAnnexe: Record<Annexe, number> = { A8: 0, A10: 0 };
   for (const c of retenus) {
+    if (c.type === 'Arret') {
+      const j = joursEntre(c, periode.debut, periode.fin);
+      joursArret += j;
+      heuresArret += j * HEURES_PAR_JOUR_ARRET;
+      continue;
+    }
     for (const p of repartirContrat(c)) {
       if (p.cle < cleDebut || p.cle > cleFin) continue;
       if (c.type === 'Enseignement') {
@@ -319,7 +391,16 @@ export function affiliation(
         brutEnseignement += p.brut;
         continue;
       }
+      if (c.type === 'Formation') {
+        heuresFormation += p.heures;
+        continue;
+      }
+      if (!estSpectacle(c)) {
+        if (c.type === 'RegimeGeneral') brutAutres += p.brut;
+        continue;
+      }
       heuresBrutes += p.heures;
+      heuresParAnnexe[c.annexe ?? annexe] += p.heures;
       sr += p.brut;
       const cur = parMois.get(p.cle) ?? { heures: 0, brut: 0, employeurs: new Set<string>() };
       cur.heures += p.heures;
@@ -341,10 +422,18 @@ export function affiliation(
     if (m.heures > plafond) moisPlafonnes.push(cle);
     nht += Math.min(m.heures, plafond);
   }
+  // arrêts assimilés : comptent pour les 507 h et les NHT (guide p. 12)
+  nht += heuresArret;
 
   const plafondEns = options.plus50ans ? PLAFOND_ENSEIGNEMENT_50_ANS : PLAFOND_ENSEIGNEMENT;
   const heuresEnseignementRetenues = Math.min(heuresEnseignement, plafondEns);
-  const heuresAffiliation = nht + heuresEnseignementRetenues;
+  const heuresFormationRetenues = Math.min(heuresFormation, Math.max(0, PLAFOND_FORMATION_ENSEIGNEMENT - heuresEnseignementRetenues));
+  const heuresAffiliation = nht + heuresEnseignementRetenues + heuresFormationRetenues;
+  // salaire de référence aménagé (SAR) quand un arrêt hors contrat est retenu (guide p. 12, exemple 7)
+  const joursPRA = Math.round((parseDate(periode.fin).getTime() - parseDate(periode.debut).getTime()) / 86400000) + 1;
+  const srBrut = sr;
+  if (joursArret > 0 && joursArret < joursPRA) sr = (sr / (joursPRA - joursArret)) * joursPRA;
+  const annexeMajoritaire: Annexe = heuresParAnnexe.A10 > heuresParAnnexe.A8 ? 'A10' : heuresParAnnexe.A8 > heuresParAnnexe.A10 ? 'A8' : annexe;
   const joursTravail = nht / DIVISEUR_JOUR[annexe];
   return {
     periode,
@@ -355,7 +444,15 @@ export function affiliation(
     heuresEnseignementRetenues,
     heuresAffiliation,
     sr,
+    srBrut,
     brutEnseignement,
+    brutAutres,
+    heuresFormation,
+    heuresFormationRetenues,
+    heuresArret,
+    joursArret,
+    heuresParAnnexe,
+    annexeMajoritaire,
     joursTravail,
     eligible: heuresAffiliation >= SEUIL_HEURES,
     heuresManquantes: Math.max(0, SEUIL_HEURES - heuresAffiliation),
@@ -609,6 +706,8 @@ export interface MoisSuivi {
   joursDansMois: number;
   /** Jours hors période de droit (avant début / après fin). */
   joursHorsDroit: number;
+  /** Jours d'arrêt (maladie, maternité…) dans le droit : pas d'ARE ces jours-là. */
+  joursArret: number;
   heures: number;
   brut: number;
   net: number;
@@ -686,8 +785,17 @@ export function suiviMensuel(p: ParamsSuivi): ResultatSuivi {
     // 1. Jours du mois situés dans la période de droit [dateIndem, dateFinDroit]
     const from = dateIndem && dateIndem > premier ? dateIndem : premier;
     const to = dateFinDroit && dateFinDroit < dernier ? dateFinDroit : dernier;
-    const joursInscrits = to >= from ? Math.round((to.getTime() - from.getTime()) / 86400000) + 1 : 0;
-    const joursHorsDroit = jdm - joursInscrits;
+    let joursInscrits = to >= from ? Math.round((to.getTime() - from.getTime()) / 86400000) + 1 : 0;
+    // jours d'arrêt (maladie, maternité…) : indemnisés par la Sécurité sociale, pas par l'ARE
+    const joursArret =
+      joursInscrits > 0
+        ? Math.min(
+            joursInscrits,
+            p.contrats.filter((c) => c.type === 'Arret').reduce((a, c) => a + joursEntre(c, toISODate(from), toISODate(to)), 0)
+          )
+        : 0;
+    joursInscrits -= joursArret;
+    const joursHorsDroit = jdm - joursInscrits - joursArret;
 
     // 2. Activité du mois
     const agg = parMois.get(cle);
@@ -762,6 +870,7 @@ export function suiviMensuel(p: ParamsSuivi): ResultatSuivi {
       mois: m,
       joursDansMois: jdm,
       joursHorsDroit,
+      joursArret,
       heures,
       brut,
       net,
@@ -818,7 +927,7 @@ export interface Projection {
 
 /** Estimation du délai avant 507 h à partir de la moyenne des 3 derniers mois travaillés. */
 export function projectionEligibilite(contrats: Contrat[], heuresManquantes: number, depuis = new Date()): Projection {
-  const parMois = [...agregerParMois(contrats).values()].sort((a, b) => a.cle.localeCompare(b.cle));
+  const parMois = [...agregerParMois(contrats, estSpectacle).values()].sort((a, b) => a.cle.localeCompare(b.cle));
   const derniers = parMois.slice(-3);
   const moyenne = derniers.length ? derniers.reduce((a, m) => a + m.heures, 0) / derniers.length : 0;
   if (heuresManquantes <= 0) return { heuresManquantes: 0, moyenneHeuresParMois: moyenne, moisEstimes: 0, dateEstimee: null };

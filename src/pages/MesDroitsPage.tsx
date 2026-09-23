@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LifeBuoy, Baby, Palmtree, HeartPulse, Check, X, ExternalLink, AlertTriangle, CalendarClock } from 'lucide-react';
+import { LifeBuoy, Baby, Palmtree, HeartPulse, Landmark, Check, X, ExternalLink, AlertTriangle, CalendarClock } from 'lucide-react';
 import { useIntermittence } from '../context/IntermittenceContext';
 import { useSimulation } from '../hooks/useSimulation';
 import { Card, Kpi, Notice, Badge, PageHeader, Tabs, Field, Segmented, InputSuffix, Ring, Aide, eur, nb } from '../components/ui';
@@ -18,8 +18,9 @@ import {
   type Issue,
 } from '../lib/droits';
 import { AJ_MIN, SEUIL_HEURES, formatDateFR, toISODate } from '../lib/calculs';
+import { trimestresRetraite, JOURS_CHOMAGE_PAR_TRIMESTRE, HEURES_SMIC_PAR_TRIMESTRE } from '../lib/retraite';
 
-type Onglet = 'perte' | 'maternite' | 'conges' | 'audiens';
+type Onglet = 'perte' | 'maternite' | 'conges' | 'retraite' | 'audiens';
 
 /** ok = true (rempli), false (non rempli) ou null (à vérifier auprès de France Travail). */
 const Condition: React.FC<{ ok: boolean | null; children: React.ReactNode }> = ({ ok, children }) => (
@@ -484,6 +485,83 @@ const AudiensOnglet: React.FC = () => {
 
 // ---------------------------------------------------------------------------
 
+const RetraiteOnglet: React.FC = () => {
+  const { data } = useIntermittence();
+  const sim = useSimulation();
+  const annees = trimestresRetraite(
+    data.contrats,
+    sim.suivi.mois.map((m) => ({ cle: m.cle, jours: m.joursIndemnises }))
+  ).reverse();
+  const courante = annees.find((a) => a.annee === new Date().getFullYear());
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-3">
+        <Kpi
+          variant="dark"
+          label={`Trimestres ${new Date().getFullYear()}`}
+          value={courante ? `${courante.total} / 4` : '—'}
+          sub={courante ? `${courante.trimestresSalaires} par vos salaires · ${courante.trimestresChomage} par le chômage` : 'aucune donnée cette année'}
+          icon={<Landmark className="h-4 w-4" />}
+        />
+        <Kpi
+          variant="lime"
+          label="1 trimestre ="
+          value={courante ? eur(courante.seuilTrimestre, 0) : '—'}
+          sub={`de salaire brut (${HEURES_SMIC_PAR_TRIMESTRE} × SMIC horaire au 1er janvier)`}
+        />
+        <Kpi label="ou" value={`${JOURS_CHOMAGE_PAR_TRIMESTRE} jours`} sub="de chômage indemnisé (trimestre assimilé)" />
+      </div>
+
+      <Card title="Par année" bodyClassName="">
+        <div className="overflow-x-auto">
+          <table className="num w-full min-w-[640px] text-sm">
+            <thead className="text-left text-xs text-slate-400">
+              <tr>
+                <th className="px-6 py-2 font-medium">Année</th>
+                <th className="px-3 py-2 text-right font-medium">Salaires bruts</th>
+                <th className="px-3 py-2 text-right font-medium">Par les salaires</th>
+                <th className="px-3 py-2 text-right font-medium">Jours indemnisés</th>
+                <th className="px-3 py-2 text-right font-medium">Par le chômage</th>
+                <th className="px-6 py-2 font-medium">Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {annees.map((a) => (
+                <tr key={a.annee}>
+                  <td className="px-6 py-3 font-semibold">{a.annee}</td>
+                  <td className="px-3 py-3 text-right">{eur(a.salaires, 0)}</td>
+                  <td className="px-3 py-3 text-right">
+                    {a.trimestresSalaires}
+                    {a.manquePourSuivant != null && a.manquePourSuivant > 0 && (
+                      <div className="text-[11px] text-slate-400">+{eur(a.manquePourSuivant, 0)} pour le suivant</div>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 text-right">{a.joursIndemnises || '—'}</td>
+                  <td className="px-3 py-3 text-right">{a.trimestresChomage}</td>
+                  <td className="px-6 py-3">
+                    <div className="flex gap-1">
+                      {[0, 1, 2, 3].map((i) => (
+                        <span key={i} className={`h-3 w-6 rounded-full ${i < a.total ? 'bg-lime-400' : 'bg-slate-100'}`} />
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      <Notice icon={<AlertTriangle className="h-4 w-4" />}>
+        Les jours indemnisés ne sont connus que pour votre droit en cours (estimation du suivi mensuel) ; les années précédentes n'en comptent donc pas ici. Les
+        revenus non salariés valident des trimestres auprès de la Sécurité sociale des indépendants, avec d'autres seuils. Votre relevé officiel :{' '}
+        <Lien href="https://www.info-retraite.fr/">info-retraite.fr</Lien>
+      </Notice>
+    </div>
+  );
+};
+
 const MesDroitsPage: React.FC = () => {
   const [onglet, setOnglet] = useState<Onglet>('perte');
   return (
@@ -500,12 +578,14 @@ const MesDroitsPage: React.FC = () => {
           { value: 'perte', label: 'Si je perds l’intermittence', icon: <LifeBuoy className="h-4 w-4" /> },
           { value: 'maternite', label: 'Maternité / paternité', icon: <Baby className="h-4 w-4" /> },
           { value: 'conges', label: 'Congés Spectacles', icon: <Palmtree className="h-4 w-4" /> },
+          { value: 'retraite', label: 'Retraite', icon: <Landmark className="h-4 w-4" /> },
           { value: 'audiens', label: 'Audiens', icon: <HeartPulse className="h-4 w-4" /> },
         ]}
       />
       {onglet === 'perte' && <PerteOnglet />}
       {onglet === 'maternite' && <MaterniteOnglet />}
       {onglet === 'conges' && <CongesOnglet />}
+      {onglet === 'retraite' && <RetraiteOnglet />}
       {onglet === 'audiens' && <AudiensOnglet />}
     </div>
   );

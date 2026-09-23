@@ -3,7 +3,7 @@ import { useIntermittence } from '../context/IntermittenceContext';
 import { useSimulation } from '../hooks/useSimulation';
 import { PieChart, TrendingUp, AlertCircle, Check, Clock, Scale } from 'lucide-react';
 import { Card, Kpi, Notice, Progress, PageHeader, eur, nb } from '../components/ui';
-import { SEUIL_HEURES, agregerParMois, parseDate, formatDateFR, toISODate, finContrat, type TypeContrat } from '../lib/calculs';
+import { SEUIL_HEURES, agregerParMois, parseDate, formatDateFR, toISODate, finContrat, estSpectacle, type TypeContrat } from '../lib/calculs';
 
 const TableauDeBordPage: React.FC = () => {
   const { data } = useIntermittence();
@@ -12,9 +12,10 @@ const TableauDeBordPage: React.FC = () => {
 
   const parMois = [...agregerParMois(data.contrats).values()].sort((a, b) => a.cle.localeCompare(b.cle));
   const maxBrut = Math.max(1, ...parMois.map((m) => m.brut));
-  const revenus: Record<TypeContrat, number> = { Cachet: 0, Heures: 0, Enseignement: 0 };
+  const revenus: Record<TypeContrat, number> = { Cachet: 0, Heures: 0, Enseignement: 0, RegimeGeneral: 0, NonSalarie: 0, Arret: 0, Formation: 0 };
   data.contrats.forEach((c) => (revenus[c.type] += c.brut));
-  const totalRev = revenus.Cachet + revenus.Heures + revenus.Enseignement;
+  const hors = revenus.RegimeGeneral + revenus.NonSalarie;
+  const totalRev = revenus.Cachet + revenus.Heures + revenus.Enseignement + hors;
 
   // Frise : début du droit → date anniversaire
   const debut = parseDate(sim.dateIndem).getTime();
@@ -22,7 +23,7 @@ const TableauDeBordPage: React.FC = () => {
   const duree = Math.max(1, fin - debut);
   const pos = (iso: string) => Math.min(100, Math.max(0, ((parseDate(iso).getTime() - debut) / duree) * 100));
   const aujourdhui = toISODate(new Date());
-  const dernierContrat = data.contrats.reduce((max, c) => (finContrat(c) > max ? finContrat(c) : max), '');
+  const dernierContrat = data.contrats.filter(estSpectacle).reduce((max, c) => (finContrat(c) > max ? finContrat(c) : max), '');
   const marqueurs: Date[] = [];
   const d0 = parseDate(sim.dateIndem);
   for (let cur = new Date(d0.getFullYear(), d0.getMonth() + 1, 1); cur < parseDate(sim.dateAnniversaire); cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1)) {
@@ -154,13 +155,21 @@ const TableauDeBordPage: React.FC = () => {
                 <div className="bg-brand-500" style={{ width: `${(revenus.Cachet / totalRev) * 100}%` }} />
                 <div className="bg-brand-300" style={{ width: `${(revenus.Heures / totalRev) * 100}%` }} />
                 <div className="bg-lime-400" style={{ width: `${(revenus.Enseignement / totalRev) * 100}%` }} />
+                <div className="bg-sky-300" style={{ width: `${(hors / totalRev) * 100}%` }} />
               </div>
               <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-500">
-                {(['Cachet', 'Heures', 'Enseignement'] as const).map((t, i) =>
-                  revenus[t] > 0 ? (
+                {(
+                  [
+                    ['Cachets', revenus.Cachet, 'bg-brand-500'],
+                    ['Heures', revenus.Heures, 'bg-brand-300'],
+                    ['Cours', revenus.Enseignement, 'bg-lime-400'],
+                    ['Hors spectacle', hors, 'bg-sky-300'],
+                  ] as const
+                ).map(([t, v, cls]) =>
+                  v > 0 ? (
                     <span key={t} className="flex items-center gap-1.5">
-                      <span className={`h-2.5 w-2.5 rounded-sm ${['bg-brand-500', 'bg-brand-300', 'bg-lime-400'][i]}`} />
-                      {t === 'Cachet' ? 'Cachets' : t} · {((revenus[t] / totalRev) * 100).toFixed(0)} %
+                      <span className={`h-2.5 w-2.5 rounded-full ${cls}`} />
+                      {t} · {((v / totalRev) * 100).toFixed(0)} %
                     </span>
                   ) : null
                 )}

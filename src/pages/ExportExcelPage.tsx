@@ -3,6 +3,7 @@ import { useIntermittence } from '../context/IntermittenceContext';
 import { useSimulation } from '../hooks/useSimulation';
 import { FileSpreadsheet, Download } from 'lucide-react';
 import { Card, Notice, PageHeader } from '../components/ui';
+import { TYPES } from '../lib/typesContrat';
 import { heuresContrat, finContrat, formatDateFR } from '../lib/calculs';
 
 const ExportExcelPage: React.FC = () => {
@@ -30,7 +31,7 @@ const ExportExcelPage: React.FC = () => {
         { header: 'Début', key: 'date', width: 12 },
         { header: 'Fin', key: 'fin', width: 12 },
         { header: 'Employeur', key: 'emp', width: 24 },
-        { header: 'Type', key: 'type', width: 9 },
+        { header: 'Type', key: 'type', width: 26 },
         { header: 'Nombre', key: 'nb', width: 9 },
         { header: 'Brut', key: 'brut', width: 12 },
         { header: 'Heures', key: 'h', width: 9 },
@@ -46,10 +47,10 @@ const ExportExcelPage: React.FC = () => {
             date: c.date,
             fin: finContrat(c),
             emp: c.employeur,
-            type: c.type,
+            type: TYPES[c.type].label,
             nb: c.nombre,
             brut: c.brut,
-            h: { formula: `IF(D${r}="Cachet",E${r}*12,E${r})`, result: heuresContrat(c) },
+            h: Math.round(heuresContrat(c) * 100) / 100,
             net: { formula: `F${r}*${sim.ratioNetSalaire}`, result: c.brut * sim.ratioNetSalaire },
             pra: dansPRA.has(c.id) ? 'oui' : 'non',
           });

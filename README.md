@@ -12,8 +12,12 @@ Application en ligne : [mysteropodes.github.io/SImulateurIntermittece](https://m
 - **Contrats** : cachets, heures ou enseignement, regroupés par mois avec les jours non indemnisables et la marge
 - **Suivi mensuel** : graphique et tableau mois par mois, avec la **marge** (heures possibles avant de perdre un jour d'ARE)
 - **Tableau de bord** : indicateurs, frise du droit, projection avant les 507 h, comparaison en cas de réexamen
+- **Actualisation** : le récap du mois à déclarer à France Travail (heures et brut par employeur, arrêts, formations), à copier en un clic
+- **Échéances** : actualisation, réexamen, rattrapage, Congés Spectacles, exportables dans votre agenda (.ics)
 - **Historique** : AJ de chaque droit passé, écarts d'une date anniversaire à l'autre, comparaison avec la prochaine
-- **Mes droits** : si je perds l'intermittence (clause de rattrapage, APS, AFD, clause de sauvegarde, régime général), maternité / paternité (IJ, heures assimilées, salaire de référence aménagé), Congés Spectacles (10 % par période), Audiens (garantie santé)
+- **Mes droits** : si je perds l'intermittence (clause de rattrapage, APS, AFD, clause de sauvegarde, régime général), maternité / paternité (IJ, heures assimilées, salaire de référence aménagé), Congés Spectacles (10 % par période), retraite (trimestres validés), Audiens (garantie santé)
+- **Types de lignes** : cachets, heures, enseignement, salarié hors spectacle, non salarié, arrêt (maladie, AT, maternité), formation ; contrats en annexe 8 et 10 mélangés
+- **Application installable** sur téléphone et utilisable hors connexion
 - **Export Excel** : classeur avec contrats, synthèse et suivi mensuel
 - Infobulles ⓘ sur tous les termes techniques, interface responsive
 
@@ -41,6 +45,10 @@ exemples chiffrés du guide (`npm test`).
 | Clause de rattrapage | 338 à 506 h + 5 ans d'ancienneté : 6 mois à la dernière AJ, franchises 2 + 2 j/mois non reportables |
 | AFD | 30 € nets/jour, 61 / 92 / 182 jours selon l'ancienneté (notice France Travail « Allocations de solidarité ») |
 | Maternité | IJ = salaires des 12 mois civils / 365 × 0,79 (104,02 € max en 2026, ameli) ; 5 h/jour assimilées ; SR × 365 / (365 − jours de congé) |
+| Autres activités | hors spectacle : réduisent l'ARE du mois, ne comptent pas pour les 507 h ; non salarié : heures = revenu brut ÷ SMIC horaire |
+| Périodes assimilées | arrêt hors contrat : 5 h/jour (507 h et NHT), SR aménagé, pas d'ARE ces jours-là ; formation + cours ≤ 338 h |
+| Annexes mixtes | droit ouvert dans l'annexe qui a le plus d'heures (guide, exemple 3) |
+| Retraite | 1 trimestre = 150 × SMIC horaire au 1er janvier (1 803 € en 2026) ou 50 jours indemnisés, 4 par an |
 | Congés Spectacles | 10 % des salaires bruts spectacle du 1er avril au 31 mars, payables dès le 1er mai |
 
 Les montants sont indicatifs : seule la notification de France Travail fait foi.

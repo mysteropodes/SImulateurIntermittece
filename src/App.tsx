@@ -10,6 +10,8 @@ import TableauDeBordPage from './pages/TableauDeBordPage';
 import ExportExcelPage from './pages/ExportExcelPage';
 import HistoriquePage from './pages/HistoriquePage';
 import MesDroitsPage from './pages/MesDroitsPage';
+import ActualisationPage from './pages/ActualisationPage';
+import EcheancesPage from './pages/EcheancesPage';
 
 import Navigation from './components/Navigation';
 import ImportExportBar from './components/ImportExportBar';
@@ -81,6 +83,8 @@ function Shell() {
             <Route path="/tableau-de-bord" element={<TableauDeBordPage />} />
             <Route path="/historique" element={<HistoriquePage />} />
             <Route path="/mes-droits" element={<MesDroitsPage />} />
+            <Route path="/actualisation" element={<ActualisationPage />} />
+            <Route path="/echeances" element={<EcheancesPage />} />
             <Route path="/export" element={<ExportExcelPage />} />
           </Routes>
           <footer className="mt-12 border-t border-slate-300/60 pt-4 text-xs text-slate-500">
