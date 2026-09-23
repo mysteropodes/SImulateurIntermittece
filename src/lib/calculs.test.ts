@@ -16,6 +16,7 @@ import {
   heuresPourAJ,
   paliers,
   margeAvantJourPerdu,
+  heuresContrat,
   type Contrat,
 } from './calculs';
 
@@ -407,5 +408,83 @@ describe('Paliers et leviers', () => {
     expect(margeAvantJourPerdu('A8', 48)).toBeCloseTo(51.43 - 48, 2);
     expect(margeAvantJourPerdu('A8', 0)).toBeCloseTo(5.714, 2);
     expect(margeAvantJourPerdu('A10', 0)).toBeCloseTo(10 / 1.3, 2);
+  });
+});
+
+describe('Activités hors spectacle, arrêts, formation, annexes mixtes', () => {
+  const spectacle = [
+    contrat({ id: 's1', date: '2026-01-10', type: 'Heures', nombre: 150, brut: 4500, employeur: 'A' }),
+    contrat({ id: 's2', date: '2026-02-10', type: 'Heures', nombre: 150, brut: 4500, employeur: 'A' }),
+    contrat({ id: 's3', date: '2026-03-10', type: 'Heures', nombre: 150, brut: 4500, employeur: 'A' }),
+  ];
+
+  it('régime général : ne compte ni pour les 507 h ni pour le SR, mais réduit l’ARE du mois', () => {
+    const rg = contrat({ id: 'rg', date: '2026-04-10', type: 'RegimeGeneral', nombre: 40, brut: 600 });
+    const a = affiliation([...spectacle, rg], 'A8', '2026-04-30');
+    expect(a.heuresAffiliation).toBe(450);
+    expect(a.sr).toBe(13500);
+    expect(a.brutAutres).toBe(600);
+    const r = suiviMensuel({
+      annexe: 'A8', contrats: [rg], ajBrute: 60, ratioNetAJ: 1, tauxPrelevement: 0, ratioNetSalaire: 1,
+      dateDebut: '2026-04-01', delaiAttente: false, franchiseCP: { total: 0, forfaitMensuel: 2 }, franchiseSal: { total: 0, mensuelle: 0 }, nbMois: 1,
+    });
+    expect(r.mois[0].joursNonIndemnisables).toBe(7); // 40 / 8 × 1,4
+  });
+
+  it('non salarié : heures = revenu brut ÷ SMIC horaire (guide p. 16)', () => {
+    const ns = contrat({ date: '2026-03-15', type: 'NonSalarie', nombre: 0, brut: 1202 });
+    expect(heuresContrat(ns)).toBeCloseTo(100, 6); // SMIC 12,02 € au 1er janvier 2026
+  });
+
+  it('arrêt assimilé : 5 h par jour pour les 507 h et les NHT, SR aménagé, pas d’ARE ces jours-là', () => {
+    const arret = contrat({ id: 'ar', date: '2026-05-01', dateFin: '2026-06-29', type: 'Arret', nombre: 60, brut: 0 });
+    const a = affiliation([...spectacle, arret], 'A8', '2026-06-30');
+    expect(a.joursArret).toBe(60);
+    expect(a.heuresArret).toBe(300);
+    expect(a.nht).toBe(750);
+    expect(a.srBrut).toBe(13500);
+    expect(a.sr).toBeCloseTo((13500 / (365 - 60)) * 365, 6);
+    const r = suiviMensuel({
+      annexe: 'A8', contrats: [arret], ajBrute: 60, ratioNetAJ: 1, tauxPrelevement: 0, ratioNetSalaire: 1,
+      dateDebut: '2026-05-01', delaiAttente: false, franchiseCP: { total: 0, forfaitMensuel: 2 }, franchiseSal: { total: 0, mensuelle: 0 }, nbMois: 2,
+    });
+    expect(r.mois[0].joursArret).toBe(31);
+    expect(r.mois[0].joursIndemnises).toBe(0);
+    expect(r.mois[1].joursArret).toBe(29);
+    expect(r.mois[1].joursIndemnises).toBe(1);
+  });
+
+  it('formation : pour les 507 h seulement, formation + enseignement ≤ 338 h', () => {
+    const f = contrat({ id: 'f', date: '2026-04-10', type: 'Formation', nombre: 400, brut: 0 });
+    const e = contrat({ id: 'e', date: '2026-04-20', type: 'Enseignement', nombre: 70, brut: 2000 });
+    const a = affiliation([...spectacle, f, e], 'A8', '2026-04-30');
+    expect(a.heuresEnseignementRetenues).toBe(70);
+    expect(a.heuresFormationRetenues).toBe(268);
+    expect(a.nht).toBe(450);
+    expect(a.heuresAffiliation).toBe(450 + 338);
+  });
+
+  it('annexes mixtes : l’annexe majoritaire en heures (guide, exemple 3 : 350 h A10 > 200 h A8)', () => {
+    const cs = [
+      contrat({ id: '1', date: '2025-06-10', type: 'Heures', nombre: 200, brut: 4000, annexe: 'A10' }),
+      contrat({ id: '2', date: '2025-08-10', type: 'Heures', nombre: 200, brut: 4000, annexe: 'A8' }),
+      contrat({ id: '3', date: '2025-10-10', type: 'Heures', nombre: 150, brut: 3000, annexe: 'A10' }),
+    ];
+    const a = affiliation(cs, 'A8', '2025-12-31');
+    expect(a.heuresParAnnexe).toEqual({ A8: 200, A10: 350 });
+    expect(a.annexeMajoritaire).toBe('A10');
+    expect(a.heuresAffiliation).toBe(550);
+  });
+});
+
+describe('période de référence et activités non spectacle', () => {
+  it('se termine au dernier contrat spectacle, pas à une formation, un arrêt ou un emploi hors spectacle', () => {
+    const cs = [
+      contrat({ id: 'a', date: '2026-09-23', type: 'Heures', nombre: 48, brut: 1500 }),
+      contrat({ id: 'f', date: '2026-10-15', type: 'Formation', nombre: 35, brut: 0 }),
+      contrat({ id: 'r', date: '2026-10-20', type: 'RegimeGeneral', nombre: 10, brut: 200 }),
+      contrat({ id: 's', date: '2026-10-25', type: 'Arret', nombre: 3, brut: 0 }),
+    ];
+    expect(periodeReference(cs).fin).toBe('2026-09-23');
   });
 });

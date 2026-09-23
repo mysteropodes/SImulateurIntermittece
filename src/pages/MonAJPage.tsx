@@ -31,6 +31,27 @@ const MonAJPage: React.FC = () => {
             />
           </Field>
 
+          <Field label="Contrats dans les deux annexes ?" hint="Oui : vous choisissez l'annexe de chaque contrat, et le droit s'ouvre dans l'annexe où vous avez le plus d'heures.">
+            <Segmented value={data.multiAnnexe} onChange={(v) => updateField('multiAnnexe', v)} options={[{ value: true, label: 'Oui' }, { value: false, label: 'Non' }]} />
+          </Field>
+          {data.multiAnnexe && (
+            <div className="rounded-3xl bg-slate-50 p-4 text-sm">
+              <p className="num text-slate-600">
+                Annexe 8 : <b>{nb(aff.heuresParAnnexe.A8)} h</b> · Annexe 10 : <b>{nb(aff.heuresParAnnexe.A10)} h</b>
+              </p>
+              {aff.annexeMajoritaire !== data.annexe ? (
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <span className="text-amber-700">Votre droit devrait s'ouvrir en annexe {aff.annexeMajoritaire === 'A8' ? '8' : '10'}.</span>
+                  <button type="button" className="btn-lime py-1.5" onClick={() => updateField('annexe', aff.annexeMajoritaire)}>
+                    Passer en annexe {aff.annexeMajoritaire === 'A8' ? '8' : '10'}
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-1 text-brand-700">L'annexe choisie est bien l'annexe majoritaire.</p>
+              )}
+            </div>
+          )}
+
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Indemnisable à partir du" aide="dateAnniversaire" hint="Début du droit en cours.">
               <input type="date" value={data.dateIndem} onChange={(e) => updateField('dateIndem', e.target.value)} className="input" />

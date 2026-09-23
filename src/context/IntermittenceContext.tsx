@@ -1,5 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import type { Annexe, Contrat } from '../lib/calculs';
+import type { Annexe, Contrat, TypeContrat } from '../lib/calculs';
+
+const TYPES: TypeContrat[] = ['Cachet', 'Heures', 'Enseignement', 'RegimeGeneral', 'NonSalarie', 'Arret', 'Formation'];
 
 /** Droit passé, saisi depuis une notification France Travail. */
 export interface DroitPasse {
@@ -26,6 +28,8 @@ export interface IntermittenceData {
   delaiAttente: boolean;
   /** 50 ans ou plus à la fin du contrat retenu (120 h d'enseignement au lieu de 70). */
   plus50ans: boolean;
+  /** Contrats dans les deux annexes : une annexe par contrat. */
+  multiAnnexe: boolean;
   /** AJ brute figurant sur la notification France Travail (vide = AJ calculée). */
   ajBruteNotifiee: string;
   /** Franchises calculées automatiquement ou saisies (notification). */
@@ -83,6 +87,7 @@ export const defaultData: IntermittenceData = {
   dateIndem: '',
   delaiAttente: false,
   plus50ans: false,
+  multiAnnexe: false,
   ajBruteNotifiee: '',
   franchisesAuto: true,
   franchiseConges: '',
@@ -139,7 +144,8 @@ export function migrate(raw: unknown): IntermittenceData {
       date: str(c.date) || new Date().toISOString().slice(0, 10),
       dateFin: str(c.dateFin) || undefined,
       employeur: str(c.employeur),
-      type: c.type === 'Cachet' || c.type === 'Enseignement' ? c.type : 'Heures',
+      type: TYPES.includes(c.type as TypeContrat) ? (c.type as TypeContrat) : 'Heures',
+      annexe: c.annexe === 'A8' || c.annexe === 'A10' ? c.annexe : undefined,
       nombre: Math.max(0, num(c.nombre, 0)),
       brut: Math.max(0, num(c.brut, 0)),
     }));
@@ -166,6 +172,7 @@ export function migrate(raw: unknown): IntermittenceData {
     dateIndem: str(r.dateIndem),
     delaiAttente: !!r.delaiAttente,
     plus50ans: !!r.plus50ans,
+    multiAnnexe: !!r.multiAnnexe,
     ajBruteNotifiee: str(r.ajBruteNotifiee ?? (v1 ? r.ajBrute : '')),
     franchisesAuto: typeof r.franchisesAuto === 'boolean' ? r.franchisesAuto : !franchisesSaisies,
     franchiseConges: str(r.franchiseConges),

@@ -128,6 +128,7 @@ const SuiviMensuelPage: React.FC = () => {
                       <span className="font-medium">{m.label}</span>
                       <span className="ml-1.5 text-xs text-slate-400">
                         {m.joursHorsDroit > 0 && !horsDroit ? `${m.joursDansMois - m.joursHorsDroit}/${m.joursDansMois} j` : `${m.joursDansMois} j`}
+                        {m.joursArret > 0 && <span className="ml-1 text-amber-600">· {m.joursArret} j arrêt</span>}
                       </span>
                     </td>
                     <td className="px-2 py-2 text-right">{cell(m.heures, 1)}</td>

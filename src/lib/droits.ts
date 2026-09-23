@@ -23,6 +23,8 @@ import {
   addDays,
   joursDansMois,
   smicAt,
+  estSpectacle,
+  estSalaire,
 } from './calculs';
 
 // ---------------------------------------------------------------------------
@@ -217,9 +219,9 @@ export function simulerConge(
   const debut12 = toISODate(new Date(debut.getFullYear() - 1, debut.getMonth(), 1));
   const debut3 = toISODate(new Date(debut.getFullYear(), debut.getMonth() - 3, 1));
   const debut6 = toISODate(new Date(debut.getFullYear(), debut.getMonth() - 6, 1));
-  const s12 = sommeSur(contrats, debut12, fin12);
-  const s3 = sommeSur(contrats, debut3, fin12);
-  const s6 = sommeSur(contrats, debut6, fin12);
+  const s12 = sommeSur(contrats, debut12, fin12, estSalaire);
+  const s3 = sommeSur(contrats, debut3, fin12, estSalaire);
+  const s6 = sommeSur(contrats, debut6, fin12, estSalaire);
 
   const conditions = [
     { label: '150 h dans les 3 mois', ok: s3.heures >= 150, detail: `${Math.round(s3.heures)} h` },
@@ -247,7 +249,7 @@ export function simulerConge(
   let ajAvec: number | null = null;
   if (def.maternite) {
     // jours de congé sans contrat (approximation : on retire les jours des mois couverts par un contrat au prorata des heures / 8)
-    const pendant = sommeSur(contrats, dateDebut, fin);
+    const pendant = sommeSur(contrats, dateDebut, fin, estSalaire);
     const joursTravailles = Math.min(def.jours, Math.round(pendant.heures / 8));
     heuresAssimilees = (def.jours - joursTravailles) * HEURES_ASSIMILEES_MATERNITE;
     const joursCongeDansPRA = Math.min(def.jours, 364);
@@ -291,7 +293,7 @@ export interface PeriodeConges {
 
 /** Indemnité = 10 % des salaires bruts spectacle de la période 1er avril → 31 mars (hors enseignement). */
 export function congesSpectacles(contrats: Contrat[], aujourdHui = new Date()): PeriodeConges[] {
-  const cles = contrats.filter((c) => c.type !== 'Enseignement').flatMap((c) => repartirContrat(c).map((p) => p.cle));
+  const cles = contrats.filter(estSpectacle).flatMap((c) => repartirContrat(c).map((p) => p.cle));
   if (cles.length === 0) return [];
   const exercice = (cle: string) => {
     const [y, m] = cle.split('-').map(Number);
@@ -302,7 +304,7 @@ export function congesSpectacles(contrats: Contrat[], aujourdHui = new Date()): 
   return exercices.map((y) => {
     const debut = `${y}-04-01`;
     const fin = `${y + 1}-03-31`;
-    const { brut } = sommeSur(contrats, debut, fin, (c) => c.type !== 'Enseignement');
+    const { brut } = sommeSur(contrats, debut, fin, estSpectacle);
     return {
       debut,
       fin,
@@ -320,7 +322,7 @@ export function congesSpectacles(contrats: Contrat[], aujourdHui = new Date()): 
 
 /** Heures d'une année civile (la réduction de cotisation santé demande 507 h l'année civile précédente). */
 export function heuresAnneeCivile(contrats: Contrat[], annee: number): number {
-  return sommeSur(contrats, `${annee}-01-01`, `${annee}-12-31`).heures;
+  return sommeSur(contrats, `${annee}-01-01`, `${annee}-12-31`, (c) => estSpectacle(c) || c.type === 'Enseignement').heures;
 }
 
 export { AJ_MIN, joursDansMois };

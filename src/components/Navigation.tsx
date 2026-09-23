@@ -1,12 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, List, PieChart, Calendar, SlidersHorizontal, FileSpreadsheet, History, LifeBuoy } from 'lucide-react';
+import { Home, List, PieChart, Calendar, SlidersHorizontal, FileSpreadsheet, History, LifeBuoy, ClipboardCheck, CalendarClock } from 'lucide-react';
 
 export const PAGES = [
   { to: '/', label: 'Synthèse', icon: Home },
   { to: '/contrats', label: 'Contrats', icon: List },
   { to: '/mon-aj', label: 'Mon droit', icon: SlidersHorizontal },
   { to: '/suivi-mensuel', label: 'Suivi mensuel', icon: Calendar },
+  { to: '/actualisation', label: 'Actualisation', icon: ClipboardCheck },
+  { to: '/echeances', label: 'Échéances', icon: CalendarClock },
   { to: '/tableau-de-bord', label: 'Tableau de bord', icon: PieChart },
   { to: '/historique', label: 'Historique', icon: History },
   { to: '/mes-droits', label: 'Mes droits', icon: LifeBuoy },
@@ -19,8 +21,10 @@ const Navigation: React.FC<{ variant?: 'side' | 'top' }> = ({ variant = 'side' }
   // mobile : garder l'onglet actif visible dans la barre défilante
   useEffect(() => {
     const actif = navRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
-    if (actif && navRef.current) {
-      navRef.current.scrollTo({ left: actif.offsetLeft - navRef.current.clientWidth / 2 + actif.clientWidth / 2, behavior: 'smooth' });
+    const nav = navRef.current;
+    if (actif && nav) {
+      const gauche = actif.getBoundingClientRect().left - nav.getBoundingClientRect().left + nav.scrollLeft;
+      nav.scrollTo({ left: gauche - nav.clientWidth / 2 + actif.clientWidth / 2, behavior: 'smooth' });
     }
   }, [location.pathname]);
 

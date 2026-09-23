@@ -73,7 +73,7 @@ export function simulation(data: IntermittenceData, aujourdHui = new Date()): Si
 
   const franchiseCPAuto = franchiseCP(aff.joursTravail);
   // « salaires de la PRA » = toutes rémunérations, enseignement compris ; le SJM reste sur le SR
-  const franchiseSalAuto = franchiseSalaires(aff.sr + aff.brutEnseignement, sjmValeur, smic, 12);
+  const franchiseSalAuto = franchiseSalaires(aff.srBrut + aff.brutEnseignement + aff.brutAutres, sjmValeur, smic, 12);
   let fcp = franchiseCPAuto;
   let fsal = franchiseSalAuto;
   if (!data.franchisesAuto) {
@@ -113,7 +113,7 @@ export function simulation(data: IntermittenceData, aujourdHui = new Date()): Si
 
   return {
     paliers: paliers(data.annexe, aff.sr, aff.nht),
-    tauxHoraireMoyen: aff.heuresBrutes > 0 ? aff.sr / aff.heuresBrutes : 0,
+    tauxHoraireMoyen: aff.heuresBrutes > 0 ? aff.srBrut / aff.heuresBrutes : 0,
     affiliation: aff,
     ajCalculee,
     sjm: sjmValeur,
