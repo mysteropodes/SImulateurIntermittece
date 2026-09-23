@@ -9,10 +9,12 @@ import SuiviMensuelPage from './pages/SuiviMensuelPage';
 import TableauDeBordPage from './pages/TableauDeBordPage';
 import ExportExcelPage from './pages/ExportExcelPage';
 import HistoriquePage from './pages/HistoriquePage';
+import MesDroitsPage from './pages/MesDroitsPage';
 
 import Navigation from './components/Navigation';
 import ImportExportBar from './components/ImportExportBar';
 import { eur, nb } from './components/ui';
+import { Marque } from './components/Logo';
 import { SEUIL_HEURES, formatDateFR } from './lib/calculs';
 
 /** Résumé toujours visible : l'essentiel de la simulation en trois lignes. */
@@ -21,10 +23,10 @@ function Resume() {
   const aff = sim.affiliation;
   const pct = Math.min(100, (aff.heuresAffiliation / SEUIL_HEURES) * 100);
   return (
-    <div className="space-y-3 rounded-xl bg-white/10 p-3 text-sm">
+    <div className="space-y-3 rounded-3xl bg-white/[0.07] p-4 text-sm">
       <div>
         <div className="text-xs text-brand-200">Allocation journalière</div>
-        <div className="num text-lg font-semibold text-white">{sim.ajBrute > 0 ? `${eur(sim.ajBrute)}` : '—'}</div>
+        <div className="num text-2xl font-medium tracking-tight text-lime-300">{sim.ajBrute > 0 ? `${eur(sim.ajBrute)}` : '—'}</div>
         {sim.ajBrute > 0 && <div className="num text-xs text-brand-200">{eur(sim.retenues.net)} net / jour</div>}
       </div>
       <div>
@@ -33,7 +35,7 @@ function Resume() {
           <span className="num">{nb(aff.heuresAffiliation, 0)} h</span>
         </div>
         <div className="mt-1 h-1.5 rounded-full bg-white/15">
-          <div className={`h-1.5 rounded-full ${aff.eligible ? 'bg-emerald-400' : 'bg-amber-400'}`} style={{ width: `${pct}%` }} />
+          <div className={`h-1.5 rounded-full ${aff.eligible ? 'bg-lime-400' : 'bg-amber-400'}`} style={{ width: `${pct}%` }} />
         </div>
       </div>
       <div className="flex justify-between text-xs text-brand-200">
@@ -48,10 +50,9 @@ function Shell() {
   return (
     <div className="min-h-screen lg:flex">
       {/* Barre latérale (bureau) */}
-      <aside className="hidden w-64 flex-shrink-0 flex-col gap-6 bg-brand-900 px-4 py-6 lg:sticky lg:top-0 lg:flex lg:h-screen">
+      <aside className="hidden w-64 flex-shrink-0 flex-col gap-6 overflow-y-auto bg-brand-900 px-4 py-6 lg:sticky lg:top-0 lg:flex lg:h-screen">
         <div className="px-2">
-          <div className="text-lg font-semibold text-white">🎭 Intermittence</div>
-          <div className="text-xs text-brand-200">Simulateur annexes 8 et 10</div>
+          <Marque />
         </div>
         <Navigation />
         <Resume />
@@ -64,13 +65,13 @@ function Shell() {
       {/* En-tête (mobile / tablette) */}
       <header className="sticky top-0 z-20 bg-brand-900 px-4 pb-2 pt-3 lg:hidden">
         <div className="mb-2 flex items-center justify-between">
-          <div className="whitespace-nowrap font-semibold text-white">🎭 Intermittence</div>
+          <Marque compact />
           <ImportExportBar compact />
         </div>
         <Navigation variant="top" />
       </header>
 
-      <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+      <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
         <div className="mx-auto max-w-6xl">
           <Routes>
             <Route path="/" element={<SynthesePage />} />
@@ -79,9 +80,10 @@ function Shell() {
             <Route path="/suivi-mensuel" element={<SuiviMensuelPage />} />
             <Route path="/tableau-de-bord" element={<TableauDeBordPage />} />
             <Route path="/historique" element={<HistoriquePage />} />
+            <Route path="/mes-droits" element={<MesDroitsPage />} />
             <Route path="/export" element={<ExportExcelPage />} />
           </Routes>
-          <footer className="mt-10 border-t border-slate-200 pt-4 text-xs text-slate-400">
+          <footer className="mt-12 border-t border-slate-300/60 pt-4 text-xs text-slate-500">
             Règles du guide « Intermittents du spectacle » de France Travail. Montants indicatifs : seule votre notification fait foi.
           </footer>
         </div>

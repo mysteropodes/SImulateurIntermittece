@@ -34,7 +34,7 @@ const PaliersPanel: React.FC = () => {
   const bar = (valeur: number, seuil: number) => Math.max(seuil * 1.6, valeur * 1.1);
 
   return (
-    <Card title="Paliers et leviers de votre AJ" icon={<Layers className="h-4 w-4" />}>
+    <Card title="Paliers et leviers de votre AJ" aide="abc" icon={<Layers className="h-4 w-4" />}>
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-5">
           <div>
@@ -79,13 +79,13 @@ const PaliersPanel: React.FC = () => {
             </p>
           </div>
 
-          <p className="rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+          <p className="rounded-2xl bg-slate-50 p-3 text-xs text-slate-600">
             Au-delà des deux seuils, le <b>taux horaire</b> pèse plus que le volume : un contrat mieux payé fait monter la partie A sans trop augmenter les jours
             non indemnisables du mois. Les heures d'enseignement ne comptent pas ici (seulement pour les 507 h).
           </p>
         </div>
 
-        <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+        <div className="space-y-4 rounded-3xl bg-slate-50 p-5">
           <p className="text-sm font-medium text-slate-700">
             Et si je travaille plus d'ici la date anniversaire ? <span className="font-normal text-slate-500">(~{moisRestants} mois)</span>
           </p>
@@ -99,11 +99,11 @@ const PaliersPanel: React.FC = () => {
               <input type="number" min={1} step={1} value={taux} onChange={(e) => setTaux(Math.max(1, +e.target.value || 1))} className="input mt-1" />
             </label>
           </div>
-          <div className="flex items-baseline justify-between rounded-lg bg-white p-3 shadow-sm">
+          <div className="flex items-baseline justify-between rounded-2xl bg-white p-4">
             <span className="text-sm text-slate-600">AJ recalculée</span>
             <span className="num text-lg font-semibold text-slate-900">
               {eur(ajSimulee)}{' '}
-              <span className={`text-sm font-medium ${ajSimulee - ajActuelle >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+              <span className={`text-sm font-medium ${ajSimulee - ajActuelle >= 0 ? 'text-brand-600' : 'text-rose-600'}`}>
                 ({ajSimulee - ajActuelle >= 0 ? '+' : ''}
                 {eur(ajSimulee - ajActuelle)})
               </span>

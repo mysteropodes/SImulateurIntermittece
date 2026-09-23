@@ -38,6 +38,7 @@ const ContratsPage: React.FC = () => {
     <div className="space-y-6">
       <PageHeader
         title="Contrats"
+        accent="et heures"
         description={
           <>
             1 cachet = 12 h. Les 507 h sont recherchées du <b>{formatDateFR(aff.periode.debut)}</b> au <b>{formatDateFR(aff.periode.fin)}</b> ; les autres
@@ -54,14 +55,17 @@ const ContratsPage: React.FC = () => {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi
           label="Heures pour les 507 h"
+          aide="h507"
+          variant="dark"
           value={`${nb(aff.heuresAffiliation, 1)} h`}
           sub={aff.eligible ? 'Seuil atteint' : `Il manque ${nb(aff.heuresManquantes, 1)} h`}
           tone={aff.eligible ? 'green' : 'amber'}
         />
-        <Kpi label="Heures pour l'AJ (NHT)" value={`${nb(aff.nht, 1)} h`} sub="hors enseignement" />
-        <Kpi label="Salaire de référence" value={eur(aff.sr, 0)} sub="bruts hors enseignement" />
+        <Kpi aide="nht" label="Heures pour l'AJ (NHT)" value={`${nb(aff.nht, 1)} h`} sub="hors enseignement" />
+        <Kpi aide="sr" label="Salaire de référence" value={eur(aff.sr, 0)} sub="bruts hors enseignement" />
         <Kpi
           label="Enseignement"
+          aide="enseignement"
           value={`${nb(aff.heuresEnseignement, 1)} h`}
           sub={`${nb(aff.heuresEnseignementRetenues, 1)} h retenues (max ${plafondEns} h)`}
           tone={aff.heuresEnseignement > plafondEns ? 'amber' : 'neutral'}
@@ -78,7 +82,7 @@ const ContratsPage: React.FC = () => {
       <Card bodyClassName="">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[980px] text-sm">
-            <thead className="sticky top-0 whitespace-nowrap bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+            <thead className="sticky top-0 whitespace-nowrap text-left text-xs font-medium text-slate-400">
               <tr>
                 <th className="px-3 py-2.5">Début</th>
                 <th className="px-3 py-2.5">Fin</th>

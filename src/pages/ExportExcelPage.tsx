@@ -184,7 +184,7 @@ const ExportExcelPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Export Excel" description="Un classeur de trois feuilles — Contrats, Synthèse, Suivi mensuel — avec les mêmes calculs que l'application." />
+      <PageHeader title="Export" accent="Excel" description="Un classeur de trois feuilles — Contrats, Synthèse, Suivi mensuel — avec les mêmes calculs que l'application." />
 
       <Card title="Générer le classeur" icon={<FileSpreadsheet className="h-4 w-4" />}>
         <button onClick={generateExcel} disabled={isGenerating} className="btn-primary">
