@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { simulation } from './simulation';
+import { simulation, historiqueDroits } from './simulation';
+import { calculAJ } from './calculs';
 import { defaultData } from '../context/IntermittenceContext';
 import type { Contrat } from './calculs';
 
@@ -41,5 +42,47 @@ describe('simulation : droit en cours et contrats postérieurs', () => {
     expect(s.suivi.mois[1].delaiAttente).toBe(3);
     // janvier : forfait CP (2) + reliquat de décembre (2) si franchise auto > 0, sinon rien
     expect(s.suivi.mois[1].joursIndemnises).toBe(31 - 8 - 3 - s.suivi.mois[1].franchiseCP - s.suivi.mois[1].franchiseSal);
+  });
+});
+
+describe('historique des droits', () => {
+  const base = {
+    ...defaultData,
+    dateIndem: '2025-12-28',
+    ajBruteNotifiee: '69.83',
+    contrats: [c('2026-01-10', 200, 6000), c('2026-03-10', 200, 6000), c('2026-05-10', 200, 6000)],
+  };
+
+  it('ordonne passé → en cours → projection et calcule les variations', () => {
+    const data = {
+      ...base,
+      historique: [
+        { id: 'h2', dateDebut: '2024-12-20', ajBrute: 66.5, heures: 800, salaires: 18000 },
+        { id: 'h1', dateDebut: '2023-12-15', ajBrute: 60 },
+      ],
+    };
+    const h = historiqueDroits(data, simulation(data, new Date(2026, 8, 12)));
+    expect(h.map((l) => l.id)).toEqual(['h1', 'h2', 'en-cours', 'projection']);
+    expect(h[0].variation).toBeNull();
+    expect(h[1].variation).toBeCloseTo(6.5, 6);
+    expect(h[2].variation).toBeCloseTo(69.83 - 66.5, 6);
+    expect(h[1].source).toBe('saisie');
+    expect(h[1].ajFormule?.aj).toBeCloseTo(calculAJ('A8', 18000, 800).aj, 6);
+    expect(h[1].dateAnniversaire).toBe('2025-12-20');
+    // projection = AJ recalculée sur la période de référence actuelle
+    expect(h[3].statut).toBe('projection');
+    expect(h[3].dateDebut).toBe('2026-12-28');
+    expect(h[3].heures).toBe(600);
+    expect(h[3].ajBrute).toBeCloseTo(calculAJ('A8', 18000, 600).aj, 6);
+    expect(h[3].variation).toBeCloseTo(calculAJ('A8', 18000, 600).aj - 69.83, 6);
+  });
+
+  it('déduit heures et salaires des contrats quand ils couvrent la période d’un droit passé', () => {
+    const data = { ...base, historique: [{ id: 'p', dateDebut: '2026-06-01', ajBrute: 50 }] };
+    const h = historiqueDroits(data, simulation(data, new Date(2026, 8, 12)));
+    const p = h.find((l) => l.id === 'p')!;
+    expect(p.source).toBe('contrats');
+    expect(p.heures).toBe(600);
+    expect(p.salaires).toBe(18000);
   });
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, List, PieChart, Calendar, SlidersHorizontal, FileSpreadsheet } from 'lucide-react';
+import { Home, List, PieChart, Calendar, SlidersHorizontal, FileSpreadsheet, History } from 'lucide-react';
 
 export const PAGES = [
   { to: '/', label: 'Synthèse', icon: Home },
@@ -8,6 +8,7 @@ export const PAGES = [
   { to: '/mon-aj', label: 'Mon droit', icon: SlidersHorizontal },
   { to: '/suivi-mensuel', label: 'Suivi mensuel', icon: Calendar },
   { to: '/tableau-de-bord', label: 'Tableau de bord', icon: PieChart },
+  { to: '/historique', label: 'Historique', icon: History },
   { to: '/export', label: 'Export Excel', icon: FileSpreadsheet },
 ];
 

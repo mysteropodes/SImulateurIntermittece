@@ -1,6 +1,19 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import type { Annexe, Contrat } from '../lib/calculs';
 
+/** Droit passé, saisi depuis une notification France Travail. */
+export interface DroitPasse {
+  id: string;
+  /** Premier jour indemnisable du droit. */
+  dateDebut: string;
+  /** AJ brute notifiée. */
+  ajBrute: number;
+  /** Heures travaillées retenues (facultatif). */
+  heures?: number;
+  /** Salaire de référence (facultatif). */
+  salaires?: number;
+}
+
 export interface IntermittenceData {
   version: 2;
   annexe: Annexe;
@@ -28,6 +41,8 @@ export interface IntermittenceData {
   /** Cotisations salariales estimées sur les salaires, en %. */
   tauxCotisationsSalaire: string;
   contrats: Contrat[];
+  /** Droits précédents, pour suivre la progression d'une date anniversaire à l'autre. */
+  historique: DroitPasse[];
 }
 
 interface IntermittenceContextProps {
@@ -38,6 +53,9 @@ interface IntermittenceContextProps {
   addContrat: () => void;
   removeContrat: (id: string) => void;
   resetData: () => void;
+  addDroit: (d?: Partial<DroitPasse>) => void;
+  updateDroit: <K extends keyof DroitPasse>(id: string, field: K, value: DroitPasse[K]) => void;
+  removeDroit: (id: string) => void;
   exportData: () => void;
   importData: (jsonData: string) => void;
 }
@@ -67,6 +85,7 @@ export const defaultData: IntermittenceData = {
   tauxCSG: '6.2',
   tauxCotisationsSalaire: '22',
   contrats: [],
+  historique: [],
 };
 
 /** Exemple de départ pour découvrir l'outil. */
@@ -116,6 +135,17 @@ export function migrate(raw: unknown): IntermittenceData {
       brut: Math.max(0, num(c.brut, 0)),
     }));
 
+  const historiqueRaw = Array.isArray(r.historique) ? r.historique : [];
+  const historique: DroitPasse[] = historiqueRaw
+    .filter((h): h is Record<string, unknown> => !!h && typeof h === 'object' && typeof h.dateDebut === 'string')
+    .map((h) => ({
+      id: str(h.id) || newId(),
+      dateDebut: str(h.dateDebut),
+      ajBrute: Math.max(0, num(h.ajBrute, 0)),
+      heures: h.heures == null || h.heures === '' ? undefined : Math.max(0, num(h.heures, 0)),
+      salaires: h.salaires == null || h.salaires === '' ? undefined : Math.max(0, num(h.salaires, 0)),
+    }));
+
   const v1 = r.version !== 2;
   const franchisesSaisies = !!(str(r.franchiseConges) || str(r.franchiseSalaires));
 
@@ -137,6 +167,7 @@ export function migrate(raw: unknown): IntermittenceData {
     tauxCSG: r.tauxCSG === '3.8' ? '3.8' : '6.2',
     tauxCotisationsSalaire: str(r.tauxCotisationsSalaire, '22') || '22',
     contrats,
+    historique,
   };
 }
 
@@ -190,6 +221,24 @@ export const IntermittenceProvider: React.FC<{ children: ReactNode }> = ({ child
     setData((prev) => ({ ...prev, contrats: prev.contrats.filter((c) => c.id !== id) }));
   };
 
+  const addDroit = (d: Partial<DroitPasse> = {}) => {
+    setData((prev) => {
+      // par défaut : un an avant le droit le plus ancien connu
+      const plusAncien = [prev.dateIndem, ...prev.historique.map((h) => h.dateDebut)].filter(Boolean).sort()[0];
+      const y = plusAncien ? Number(plusAncien.slice(0, 4)) - 1 : new Date().getFullYear() - 1;
+      const dateDebut = plusAncien ? `${y}${plusAncien.slice(4)}` : `${y}-01-01`;
+      return { ...prev, historique: [...prev.historique, { id: newId(), dateDebut, ajBrute: 0, ...d }] };
+    });
+  };
+
+  const updateDroit: IntermittenceContextProps['updateDroit'] = (id, field, value) => {
+    setData((prev) => ({ ...prev, historique: prev.historique.map((h) => (h.id === id ? { ...h, [field]: value } : h)) }));
+  };
+
+  const removeDroit = (id: string) => {
+    setData((prev) => ({ ...prev, historique: prev.historique.filter((h) => h.id !== id) }));
+  };
+
   const resetData = () => {
     if (confirm('Effacer toutes les données saisies ?')) setData({ ...defaultData, contrats: [] });
   };
@@ -214,7 +263,7 @@ export const IntermittenceProvider: React.FC<{ children: ReactNode }> = ({ child
     }
   };
 
-  const value = { data, setData, updateField, updateContrat, addContrat, removeContrat, resetData, exportData, importData };
+  const value = { data, setData, updateField, updateContrat, addContrat, removeContrat, resetData, addDroit, updateDroit, removeDroit, exportData, importData };
 
   return <IntermittenceContext.Provider value={value}>{children}</IntermittenceContext.Provider>;
 };
