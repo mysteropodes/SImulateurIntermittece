@@ -60,6 +60,7 @@ function Shell() {
         <Resume />
         <div className="mt-auto space-y-3">
           <ImportExportBar />
+          <p className="px-3 text-[11px] text-brand-200">Mise à jour le {formatDateFR(__DATE_MAJ__)}</p>
           <p className="px-3 text-[11px] leading-snug text-brand-300">Vos données restent dans ce navigateur. Exportez-les pour les garder.</p>
         </div>
       </aside>
@@ -88,7 +89,8 @@ function Shell() {
             <Route path="/export" element={<ExportExcelPage />} />
           </Routes>
           <footer className="mt-12 border-t border-slate-300/60 pt-4 text-xs text-slate-500">
-            Règles du guide « Intermittents du spectacle » de France Travail. Montants indicatifs : seule votre notification fait foi. Code source :{' '}
+            Règles du guide « Intermittents du spectacle » de France Travail. Montants indicatifs : seule votre notification fait foi. Mise à jour le{' '}
+            {formatDateFR(__DATE_MAJ__)}. Code source :{' '}
             <a href="https://github.com/mysteropodes/SImulateurIntermittece" target="_blank" rel="noreferrer" className="font-semibold text-brand-700 underline underline-offset-2">
               GitHub
             </a>

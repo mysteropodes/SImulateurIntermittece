@@ -18,6 +18,8 @@ const versionServiceWorker = () => ({
 
 export default defineConfig({
   plugins: [react(), versionServiceWorker()],
+  // date de mise à jour affichée dans l'application (date du build)
+  define: { __DATE_MAJ__: JSON.stringify(new Date().toISOString().slice(0, 10)) },
   base: '/SImulateurIntermittece/',
   resolve: {
     alias: {

@@ -1,0 +1,40 @@
+# Rappel deux fois par an : vérifier les valeurs revalorisées utilisées par le simulateur.
+name: Rappel — vérifier les barèmes
+
+on:
+  schedule:
+    - cron: '0 7 2 1 *' # 2 janvier : SMIC, plafond de la Sécurité sociale
+    - cron: '0 7 2 7 *' # 2 juillet : revalorisation de l'AJ minimale (Unédic)
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  rappel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ouvrir un ticket de vérification
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          DATE=$(date +'%d/%m/%Y')
+          cat > corps.md <<'CORPS'
+          Les valeurs ci-dessous changent chaque année. Vérifiez-les et mettez à jour `src/lib/calculs.ts` si besoin, puis `npm test` et `npm run deploy`.
+
+          **Au 1er janvier**
+          - [ ] SMIC horaire brut — table `SMIC_HORAIRE` (sert aussi au trimestre de retraite, à la franchise salaires et au non-salarié)
+          - [ ] Plafond mensuel de la Sécurité sociale — table `PMSS` (plafond de cumul 118 %, IJ maternité maximale)
+
+          **Au 1er juillet**
+          - [ ] AJ minimale (partie fixe, 31,96 € depuis juillet 2023) — `AJ_MIN`
+          - [ ] AJ maximale (174,80 €) — `AJ_MAX`, et planchers 38 € / 44 € — `PLANCHER`
+
+          **À tout moment**
+          - [ ] Nouvelle version du guide « Intermittents du spectacle » de France Travail (règles des annexes 8 et 10)
+
+          Sources : service-public.gouv.fr (SMIC, plafond de la Sécurité sociale), unedic.org (revalorisation des allocations), francetravail.fr (guide intermittents).
+          CORPS
+          sed -i 's/^          //' corps.md
+          gh issue create --title "Vérifier les barèmes du simulateur ($DATE)" --body-file corps.md
