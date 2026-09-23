@@ -14,6 +14,7 @@ const MonAJPage: React.FC = () => {
     <div className="space-y-6">
       <PageHeader
         title="Mon droit"
+        accent="et mes paramètres"
         description="Paramètres de votre situation. L'AJ, les franchises et le suivi mensuel se calculent à partir de vos contrats."
       />
 
@@ -31,7 +32,7 @@ const MonAJPage: React.FC = () => {
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Indemnisable à partir du" hint="Début du droit en cours.">
+            <Field label="Indemnisable à partir du" aide="dateAnniversaire" hint="Début du droit en cours.">
               <input type="date" value={data.dateIndem} onChange={(e) => updateField('dateIndem', e.target.value)} className="input" />
             </Field>
             <Field label="Fin du contrat ayant ouvert le droit" hint="Facultatif : début du droit = lendemain.">
@@ -40,6 +41,7 @@ const MonAJPage: React.FC = () => {
           </div>
 
           <Field
+            aide="pra"
             label="Figer la fin de la période de référence"
             hint={
               <>
@@ -66,6 +68,7 @@ const MonAJPage: React.FC = () => {
 
         <Card title="Droit notifié par France Travail" icon={<FileCheck className="h-4 w-4" />} bodyClassName="p-5 space-y-5">
           <Field
+            aide="aj"
             label="AJ brute de votre notification"
             hint={
               sim.sourceAJ === 'notifiee' ? (
@@ -127,6 +130,7 @@ const MonAJPage: React.FC = () => {
 
         <Card
           title="Franchises"
+          aide="franchiseCP"
           icon={<Scissors className="h-4 w-4" />}
           action={
             <Segmented
@@ -196,7 +200,7 @@ const MonAJPage: React.FC = () => {
           )}
         </Card>
 
-        <Card title="De l'AJ brute à ce qui est versé" icon={<Receipt className="h-4 w-4" />}>
+        <Card title="De l'AJ brute à ce qui est versé" aide="ajNette" icon={<Receipt className="h-4 w-4" />}>
           {sim.ajBrute > 0 ? (
             <table className="num w-full text-sm">
               <tbody className="divide-y divide-slate-100">
@@ -222,7 +226,7 @@ const MonAJPage: React.FC = () => {
                 </tr>
                 <tr>
                   <td className="py-2 font-semibold text-slate-900">Versé par jour indemnisé</td>
-                  <td className="py-2 text-right text-lg font-semibold text-emerald-600">
+                  <td className="py-2 text-right text-lg font-semibold text-brand-600">
                     {eur(sim.retenues.net * (1 - (parseFloat(data.tauxPrelevement) || 0) / 100))}
                   </td>
                 </tr>

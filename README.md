@@ -12,7 +12,10 @@ Application en ligne : [mysteropodes.github.io/SImulateurIntermittece](https://m
 - **Contrats** : cachets, heures ou enseignement, regroupés par mois avec les jours non indemnisables et la marge
 - **Suivi mensuel** : graphique et tableau mois par mois, avec la **marge** (heures possibles avant de perdre un jour d'ARE)
 - **Tableau de bord** : indicateurs, frise du droit, projection avant les 507 h, comparaison en cas de réexamen
+- **Historique** : AJ de chaque droit passé, écarts d'une date anniversaire à l'autre, comparaison avec la prochaine
+- **Mes droits** : si je perds l'intermittence (clause de rattrapage, APS, AFD, clause de sauvegarde, régime général), maternité / paternité (IJ, heures assimilées, salaire de référence aménagé), Congés Spectacles (10 % par période), Audiens (garantie santé)
 - **Export Excel** : classeur avec contrats, synthèse et suivi mensuel
+- Infobulles ⓘ sur tous les termes techniques, interface responsive
 
 ## Règles appliquées
 
@@ -34,6 +37,11 @@ exemples chiffrés du guide (`npm test`).
 | Ordre des déductions | délai d'attente → forfait CP → forfait salaires → reliquats reportés |
 | Plafond de cumul | salaires bruts + ARE ≤ 118 % du PMSS (4 559,52 € en 2024, 4 631,50 € en 2025, 4 725,90 € en 2026) ; jours recalculés à l'entier supérieur |
 | Fin du droit | date anniversaire = début du droit + 12 mois |
+
+| Clause de rattrapage | 338 à 506 h + 5 ans d'ancienneté : 6 mois à la dernière AJ, franchises 2 + 2 j/mois non reportables |
+| AFD | 30 € nets/jour, 61 / 92 / 182 jours selon l'ancienneté (notice France Travail « Allocations de solidarité ») |
+| Maternité | IJ = salaires des 12 mois civils / 365 × 0,79 (104,02 € max en 2026, ameli) ; 5 h/jour assimilées ; SR × 365 / (365 − jours de congé) |
+| Congés Spectacles | 10 % des salaires bruts spectacle du 1er avril au 31 mars, payables dès le 1er mai |
 
 Les montants sont indicatifs : seule la notification de France Travail fait foi.
 

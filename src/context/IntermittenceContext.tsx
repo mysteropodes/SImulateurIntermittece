@@ -43,6 +43,14 @@ export interface IntermittenceData {
   contrats: Contrat[];
   /** Droits précédents, pour suivre la progression d'une date anniversaire à l'autre. */
   historique: DroitPasse[];
+  /** Profil pour l'onglet « Mes droits » (perte de l'intermittence, congés). */
+  profil: {
+    ancienneteAns: number;
+    cinqAnsSur10: boolean;
+    afdDeja: number;
+    congeDebut: string;
+    congeType: string;
+  };
 }
 
 interface IntermittenceContextProps {
@@ -86,6 +94,7 @@ export const defaultData: IntermittenceData = {
   tauxCotisationsSalaire: '22',
   contrats: [],
   historique: [],
+  profil: { ancienneteAns: 0, cinqAnsSur10: false, afdDeja: 0, congeDebut: '', congeType: 'maternite-1-2' },
 };
 
 /** Exemple de départ pour découvrir l'outil. */
@@ -168,6 +177,16 @@ export function migrate(raw: unknown): IntermittenceData {
     tauxCotisationsSalaire: str(r.tauxCotisationsSalaire, '22') || '22',
     contrats,
     historique,
+    profil: (() => {
+      const p = (r.profil && typeof r.profil === 'object' ? r.profil : {}) as Record<string, unknown>;
+      return {
+        ancienneteAns: Math.max(0, num(p.ancienneteAns, 0)),
+        cinqAnsSur10: !!p.cinqAnsSur10,
+        afdDeja: Math.max(0, Math.floor(num(p.afdDeja, 0))),
+        congeDebut: str(p.congeDebut),
+        congeType: str(p.congeType, 'maternite-1-2') || 'maternite-1-2',
+      };
+    })(),
   };
 }
 

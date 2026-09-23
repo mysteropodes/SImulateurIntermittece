@@ -35,25 +35,27 @@ const TableauDeBordPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Tableau de bord" description="Où vous en êtes sur votre droit, et ce que donnerait un réexamen." />
+      <PageHeader title="Tableau de bord" accent="et projections" description="Où vous en êtes sur votre droit, et ce que donnerait un réexamen." />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi
           label="Heures sur 12 mois"
+          aide="h507"
           value={`${nb(aff.heuresAffiliation, 0)} h`}
           sub={`sur ${SEUIL_HEURES} h requises`}
           tone={aff.eligible ? 'green' : 'amber'}
           footer={<Progress value={aff.heuresAffiliation} max={SEUIL_HEURES} tone={aff.eligible ? 'green' : 'amber'} />}
         />
-        <Kpi label="Jours de travail" value={nb(aff.joursTravail, 1)} sub={`NHT / ${data.annexe === 'A8' ? 8 : 10}`} footer={<>SJM : {eur(sim.sjm)}</>} />
+        <Kpi aide="sjm" label="Jours de travail" value={nb(aff.joursTravail, 1)} sub={`NHT / ${data.annexe === 'A8' ? 8 : 10}`} footer={<>SJM : {eur(sim.sjm)}</>} />
         <Kpi
           label="Allocation journalière"
+          aide="aj"
+          variant="dark"
           value={sim.ajBrute > 0 ? eur(sim.ajBrute) : 'Non éligible'}
           sub={sim.ajBrute > 0 ? `${eur(sim.retenues.net)} net / jour` : undefined}
-          tone={sim.ajBrute > 0 ? 'brand' : 'red'}
           footer={<>Fin du droit : {formatDateFR(sim.dateFinDroit)}</>}
         />
-        <Kpi label="Salaire de référence" value={eur(aff.sr, 0)} sub="bruts dans la période" footer={<>≈ {eur(aff.sr * sim.ratioNetSalaire, 0)} net</>} />
+        <Kpi aide="sr" label="Salaire de référence" value={eur(aff.sr, 0)} sub="bruts dans la période" footer={<>≈ {eur(aff.sr * sim.ratioNetSalaire, 0)} net</>} />
       </div>
 
       <Card title="Frise du droit" icon={<Clock className="h-4 w-4" />}>
@@ -69,7 +71,7 @@ const TableauDeBordPage: React.FC = () => {
               <div className="mt-1 text-[10px] text-slate-400">{new Intl.DateTimeFormat('fr-FR', { month: 'short' }).format(d)}</div>
             </div>
           ))}
-          <Marker left={0} color="bg-emerald-500" label={`Début ${formatDateFR(sim.dateIndem)}`} align="start" />
+          <Marker left={0} color="bg-lime-500" label={`Début ${formatDateFR(sim.dateIndem)}`} align="start" />
           <Marker left={100} color="bg-slate-800" label={`Anniversaire ${formatDateFR(sim.dateAnniversaire)}`} align="end" />
           {aujourdhui >= sim.dateIndem && aujourdhui <= sim.dateAnniversaire && <Marker left={pos(aujourdhui)} color="bg-brand-600" label="Aujourd'hui" below />}
           {dernierContrat && dernierContrat >= sim.dateIndem && dernierContrat <= sim.dateAnniversaire && (
@@ -105,13 +107,13 @@ const TableauDeBordPage: React.FC = () => {
               {ecart != null && ajActuelle != null && ajRecalc != null ? (
                 <>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-lg bg-slate-50 p-3">
+                    <div className="rounded-2xl bg-slate-50 p-3">
                       <div className="text-xs text-slate-500">AJ actuelle (notifiée)</div>
                       <div className="num text-lg font-semibold">{eur(ajActuelle)}</div>
                     </div>
-                    <div className="rounded-lg bg-slate-50 p-3">
+                    <div className="rounded-2xl bg-slate-50 p-3">
                       <div className="text-xs text-slate-500">AJ si réexamen aujourd'hui</div>
-                      <div className={`num text-lg font-semibold ${ecart >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      <div className={`num text-lg font-semibold ${ecart >= 0 ? 'text-brand-600' : 'text-rose-600'}`}>
                         {eur(ajRecalc)} <span className="text-sm">({ecart >= 0 ? '+' : ''}{eur(ecart)})</span>
                       </div>
                     </div>
@@ -150,14 +152,14 @@ const TableauDeBordPage: React.FC = () => {
             <div className="mt-4 border-t border-slate-100 pt-4">
               <div className="flex h-3 overflow-hidden rounded-full">
                 <div className="bg-brand-500" style={{ width: `${(revenus.Cachet / totalRev) * 100}%` }} />
-                <div className="bg-sky-400" style={{ width: `${(revenus.Heures / totalRev) * 100}%` }} />
-                <div className="bg-emerald-400" style={{ width: `${(revenus.Enseignement / totalRev) * 100}%` }} />
+                <div className="bg-brand-300" style={{ width: `${(revenus.Heures / totalRev) * 100}%` }} />
+                <div className="bg-lime-400" style={{ width: `${(revenus.Enseignement / totalRev) * 100}%` }} />
               </div>
               <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-500">
                 {(['Cachet', 'Heures', 'Enseignement'] as const).map((t, i) =>
                   revenus[t] > 0 ? (
                     <span key={t} className="flex items-center gap-1.5">
-                      <span className={`h-2.5 w-2.5 rounded-sm ${['bg-brand-500', 'bg-sky-400', 'bg-emerald-400'][i]}`} />
+                      <span className={`h-2.5 w-2.5 rounded-sm ${['bg-brand-500', 'bg-brand-300', 'bg-lime-400'][i]}`} />
                       {t === 'Cachet' ? 'Cachets' : t} · {((revenus[t] / totalRev) * 100).toFixed(0)} %
                     </span>
                   ) : null

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useIntermittence } from '../context/IntermittenceContext';
 import { useSimulation } from '../hooks/useSimulation';
 import { BarChart3, ChevronDown, Table2 } from 'lucide-react';
-import { Card, Kpi, Notice, PageHeader, eur, nb } from '../components/ui';
+import { Card, Kpi, Notice, PageHeader, Aide, eur, nb } from '../components/ui';
 import { COEF_NON_INDEMNISABLE, DIVISEUR_JOUR, SEUIL_JOURS_TRAVAIL, cleMois, plafondCumul } from '../lib/calculs';
 
 const MOIS_COURT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
@@ -20,13 +20,13 @@ const SuiviMensuelPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Suivi mensuel" description="Ce que vous touchez mois par mois : salaires, jours non indemnisables, franchises et ARE." />
+      <PageHeader title="Suivi mensuel" accent="mois par mois" description="Ce que vous touchez mois par mois : salaires, jours non indemnisables, franchises et ARE." />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Kpi label="Total net sur le droit" value={eur(totaux.totalNet, 0)} sub="salaires + ARE versée" tone="brand" />
-        <Kpi label="ARE versée" value={eur(totaux.areVersee, 0)} sub={`${totaux.joursIndemnises} jours indemnisés`} tone="green" />
+        <Kpi variant="dark" label="Total net sur le droit" value={eur(totaux.totalNet, 0)} sub="salaires + ARE versée" />
+        <Kpi variant="lime" label="ARE versée" value={eur(totaux.areVersee, 0)} sub={`${totaux.joursIndemnises} jours indemnisés`} />
         <Kpi label="Salaires nets" value={eur(totaux.net, 0)} sub={`${nb(totaux.heures, 0)} h travaillées`} />
-        <Kpi label="Délai et franchises" value={`${totaux.delaiAttente + totaux.franchiseCP + totaux.franchiseSal} j`} sub={`délai ${totaux.delaiAttente} · CP ${totaux.franchiseCP} · salaires ${totaux.franchiseSal}`} tone="amber" />
+        <Kpi aide="franchiseCP" label="Délai et franchises" value={`${totaux.delaiAttente + totaux.franchiseCP + totaux.franchiseSal} j`} sub={`délai ${totaux.delaiAttente} · CP ${totaux.franchiseCP} · salaires ${totaux.franchiseSal}`} tone="amber" />
       </div>
 
       <Card title="Revenus nets par mois" icon={<BarChart3 className="h-4 w-4" />}>
@@ -38,8 +38,8 @@ const SuiviMensuelPage: React.FC = () => {
               <div key={m.cle} className="group flex min-w-0 flex-1 flex-col items-center gap-1" title={`${m.label} — salaires ${eur(m.net, 0)} + ARE ${eur(m.areVersee, 0)}`}>
                 <div className="num hidden text-[10px] text-slate-500 group-hover:block">{nb(m.totalNet, 0)}</div>
                 <div className="flex h-36 w-full flex-col justify-end overflow-hidden rounded-md bg-slate-50">
-                  <div className="w-full bg-emerald-400" style={{ height: `${hAre}%` }} />
-                  <div className="w-full bg-brand-400" style={{ height: `${hSal}%` }} />
+                  <div className="w-full bg-lime-400" style={{ height: `${hAre}%` }} />
+                  <div className="w-full bg-brand-600" style={{ height: `${hSal}%` }} />
                 </div>
                 <div className={`w-full truncate text-center text-[10px] ${m.cle === courant ? 'font-semibold text-brand-700' : 'text-slate-400'}`}>{MOIS_COURT[m.mois - 1]}</div>
               </div>
@@ -48,10 +48,10 @@ const SuiviMensuelPage: React.FC = () => {
         </div>
         <div className="mt-3 flex gap-4 text-xs text-slate-500">
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-sm bg-emerald-400" /> ARE versée
+            <span className="h-2.5 w-2.5 rounded-sm bg-lime-400" /> ARE versée
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-sm bg-brand-400" /> Salaires nets
+            <span className="h-2.5 w-2.5 rounded-sm bg-brand-600" /> Salaires nets
           </span>
         </div>
       </Card>
@@ -90,19 +90,31 @@ const SuiviMensuelPage: React.FC = () => {
         )}
         <div className="overflow-x-auto">
           <table className="num w-full min-w-[980px] text-sm">
-            <thead className="bg-slate-50 text-xs font-medium uppercase tracking-wide text-slate-500">
+            <thead className="text-xs font-medium text-slate-400">
               <tr>
                 <th className="px-3 py-2.5 text-left">Mois</th>
                 <th className="px-2 py-2.5 text-right">Heures</th>
                 <th className="px-2 py-2.5 text-right">Brut</th>
                 <th className="px-2 py-2.5 text-right" title={`Heures / ${DIVISEUR_JOUR[annexe]}`}>J. trav.</th>
-                <th className="px-2 py-2.5 text-right" title="Jours non indemnisables">JNI</th>
-                <th className="px-2 py-2.5 text-right" title="Heures possibles avant de perdre un jour de plus">Marge</th>
-                <th className="px-2 py-2.5 text-right">Délai</th>
-                <th className="px-2 py-2.5 text-right">CP</th>
-                <th className="px-2 py-2.5 text-right">Sal.</th>
+                <th className="px-2 py-2.5 text-right">
+                  <span className="inline-flex items-center gap-1">JNI <Aide terme="jni" /></span>
+                </th>
+                <th className="px-2 py-2.5 text-right">
+                  <span className="inline-flex items-center gap-1">Marge <Aide terme="marge" /></span>
+                </th>
+                <th className="px-2 py-2.5 text-right">
+                  <span className="inline-flex items-center gap-1">Délai <Aide terme="delai" /></span>
+                </th>
+                <th className="px-2 py-2.5 text-right">
+                  <span className="inline-flex items-center gap-1">CP <Aide terme="franchiseCP" /></span>
+                </th>
+                <th className="px-2 py-2.5 text-right">
+                  <span className="inline-flex items-center gap-1">Sal. <Aide terme="franchiseSal" /></span>
+                </th>
                 <th className="px-2 py-2.5 text-right">J. payés</th>
-                <th className="px-2 py-2.5 text-right">ARE brute</th>
+                <th className="px-2 py-2.5 text-right">
+                  <span className="inline-flex items-center gap-1">ARE brute <Aide terme="plafondCumul" /></span>
+                </th>
                 <th className="px-2 py-2.5 text-right">ARE versée</th>
                 <th className="px-3 py-2.5 text-right">Total net</th>
               </tr>
@@ -111,7 +123,7 @@ const SuiviMensuelPage: React.FC = () => {
               {mois.map((m) => {
                 const horsDroit = m.joursHorsDroit === m.joursDansMois;
                 return (
-                  <tr key={m.cle} className={`${horsDroit ? 'text-slate-300' : ''} ${m.cle === courant ? 'bg-brand-50/60' : 'hover:bg-slate-50/60'}`}>
+                  <tr key={m.cle} className={`${horsDroit ? 'text-slate-300' : ''} ${m.cle === courant ? 'bg-lime-100' : 'hover:bg-slate-50/60'}`}>
                     <td className="px-3 py-2 text-left">
                       <span className="font-medium">{m.label}</span>
                       <span className="ml-1.5 text-xs text-slate-400">
@@ -139,13 +151,13 @@ const SuiviMensuelPage: React.FC = () => {
                         </span>
                       )}
                     </td>
-                    <td className="px-2 py-2 text-right text-emerald-700">{cell(m.areVersee, 0)}</td>
+                    <td className="px-2 py-2 text-right text-brand-600">{cell(m.areVersee, 0)}</td>
                     <td className="px-3 py-2 text-right font-semibold">{m.totalNet > 0 ? eur(m.totalNet, 0) : <span className="text-slate-300">–</span>}</td>
                   </tr>
                 );
               })}
             </tbody>
-            <tfoot className="border-t-2 border-slate-200 bg-slate-50 font-semibold">
+            <tfoot className="border-t border-slate-200 font-semibold">
               <tr>
                 <td className="px-3 py-2.5 text-left">Total</td>
                 <td className="px-2 py-2.5 text-right">{nb(totaux.heures, 0)}</td>

@@ -7,7 +7,7 @@ import { Card, Badge, Notice, PageHeader, eur, nb } from '../components/ui';
 import { formatDateFR } from '../lib/calculs';
 
 const statutBadge = (l: LigneHistorique) =>
-  l.statut === 'en-cours' ? <Badge tone="brand">en cours</Badge> : l.statut === 'projection' ? <Badge tone="amber">prochaine</Badge> : <Badge>passé</Badge>;
+  l.statut === 'en-cours' ? <Badge tone="brand">en cours</Badge> : l.statut === 'projection' ? <Badge tone="lime">prochaine</Badge> : <Badge>passé</Badge>;
 
 const sourceLabel: Record<NonNullable<LigneHistorique['source']>, string> = {
   saisie: 'saisi',
@@ -17,7 +17,7 @@ const sourceLabel: Record<NonNullable<LigneHistorique['source']>, string> = {
 
 const Ecart: React.FC<{ v: number | null; unite?: 'eur' | 'h'; dec?: number }> = ({ v, unite = 'eur', dec = 2 }) => {
   if (v == null) return <span className="text-slate-300">–</span>;
-  const cls = Math.abs(v) < 1e-9 ? 'text-slate-500' : v > 0 ? 'text-emerald-600' : 'text-rose-600';
+  const cls = Math.abs(v) < 1e-9 ? 'text-slate-500' : v > 0 ? 'text-brand-600' : 'text-rose-600';
   const txt = unite === 'eur' ? eur(Math.abs(v), dec) : `${nb(Math.abs(v), dec)} h`;
   return (
     <span className={`num font-medium ${cls}`}>
@@ -85,7 +85,8 @@ const HistoriquePage: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Historique des droits"
+        title="Historique"
+        accent="de vos droits"
         description="Votre AJ d'une date anniversaire à l'autre, et ce que donnerait la prochaine avec vos contrats actuels."
         actions={
           <>
@@ -110,7 +111,7 @@ const HistoriquePage: React.FC = () => {
         <div className="flex h-56 items-end gap-3 sm:gap-6">
           {lignes.map((l) => {
             const h = l.ajBrute != null ? (l.ajBrute / maxAJ) * 100 : 0;
-            const couleur = l.statut === 'projection' ? 'bg-amber-300' : l.statut === 'en-cours' ? 'bg-brand-500' : 'bg-slate-300';
+            const couleur = l.statut === 'projection' ? 'bg-lime-400' : l.statut === 'en-cours' ? 'bg-brand-700' : 'bg-brand-200';
             return (
               <div key={l.id} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
                 <div className="num text-center text-xs">
@@ -121,7 +122,7 @@ const HistoriquePage: React.FC = () => {
                 </div>
                 <div className="flex h-40 w-full max-w-[88px] items-end">
                   <div
-                    className={`w-full rounded-t-md ${couleur} ${l.statut === 'projection' ? 'bg-[repeating-linear-gradient(45deg,transparent_0_6px,rgba(255,255,255,.45)_6px_12px)]' : ''}`}
+                    className={`w-full rounded-2xl ${couleur} ${l.statut === 'projection' ? 'bg-[repeating-linear-gradient(45deg,transparent_0_6px,rgba(255,255,255,.45)_6px_12px)]' : ''}`}
                     style={{ height: `${Math.max(h, 2)}%` }}
                   />
                 </div>
@@ -132,13 +133,13 @@ const HistoriquePage: React.FC = () => {
         </div>
         <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-sm bg-slate-300" /> droits passés
+            <span className="h-2.5 w-2.5 rounded-full bg-brand-200" /> droits passés
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-sm bg-brand-500" /> droit en cours
+            <span className="h-2.5 w-2.5 rounded-full bg-brand-700" /> droit en cours
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-sm bg-amber-300" /> prochaine date anniversaire (estimation sur vos contrats actuels)
+            <span className="h-2.5 w-2.5 rounded-full bg-lime-400" /> prochaine date anniversaire (estimation sur vos contrats actuels)
           </span>
         </div>
       </Card>
@@ -146,7 +147,7 @@ const HistoriquePage: React.FC = () => {
       <Card title="Droits" icon={<History className="h-4 w-4" />} bodyClassName="">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[860px] text-sm">
-            <thead className="whitespace-nowrap bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+            <thead className="whitespace-nowrap text-left text-xs font-medium text-slate-400">
               <tr>
                 <th className="px-3 py-2.5">Début du droit</th>
                 <th className="px-3 py-2.5">Anniversaire</th>
@@ -162,7 +163,7 @@ const HistoriquePage: React.FC = () => {
               {lignes.map((l) => {
                 const brut = data.historique.find((h) => h.id === l.id);
                 return (
-                  <tr key={l.id} className={l.statut === 'projection' ? 'bg-amber-50/40' : l.statut === 'en-cours' ? 'bg-brand-50/40' : ''}>
+                  <tr key={l.id} className={l.statut === 'projection' ? 'bg-lime-100/60' : l.statut === 'en-cours' ? 'bg-brand-50/60' : ''}>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
                         {brut ? (
@@ -264,7 +265,7 @@ const HistoriquePage: React.FC = () => {
       >
         <div className="overflow-x-auto">
           <table className="num w-full min-w-[520px] text-sm">
-            <thead className="bg-slate-50 text-xs font-medium uppercase tracking-wide text-slate-500">
+            <thead className="text-xs font-medium text-slate-400">
               <tr>
                 <th className="px-4 py-2.5 text-left"></th>
                 <th className="px-4 py-2.5 text-right">{ref ? `Droit du ${formatDateFR(ref.dateDebut)}` : 'Avant'}</th>
