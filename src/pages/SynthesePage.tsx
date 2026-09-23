@@ -5,6 +5,7 @@ import { useSimulation } from '../hooks/useSimulation';
 import { AlertCircle, ArrowRight, Calendar, Euro, Wallet } from 'lucide-react';
 import { Card, Kpi, Stat, Notice, Ring, Aide, PageHeader, eur, nb } from '../components/ui';
 import PaliersPanel from '../components/PaliersPanel';
+import ExamenAnniversaire from '../components/ExamenAnniversaire';
 import { SEUIL_HEURES, formatDateFR, parseDate, cleMois } from '../lib/calculs';
 
 const SynthesePage: React.FC = () => {
@@ -79,6 +80,8 @@ const SynthesePage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <ExamenAnniversaire compact />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi label="Date anniversaire" aide="dateAnniversaire" value={formatDateFR(sim.dateAnniversaire)} sub={`dans ${joursRestants} jours`} icon={<Calendar className="h-4 w-4" />} />

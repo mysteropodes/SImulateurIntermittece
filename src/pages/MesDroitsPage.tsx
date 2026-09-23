@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LifeBuoy, Baby, Palmtree, HeartPulse, Landmark, Check, X, ExternalLink, AlertTriangle, CalendarClock } from 'lucide-react';
+import { LifeBuoy, Baby, Palmtree, HeartPulse, Landmark, Scale, Users, Building2, Gavel, Check, X, ExternalLink, AlertTriangle, CalendarClock } from 'lucide-react';
 import { useIntermittence } from '../context/IntermittenceContext';
 import { useSimulation } from '../hooks/useSimulation';
 import { Card, Kpi, Notice, Badge, PageHeader, Tabs, Field, Segmented, InputSuffix, Ring, Aide, eur, nb } from '../components/ui';
@@ -20,7 +20,7 @@ import {
 import { AJ_MIN, SEUIL_HEURES, formatDateFR, toISODate } from '../lib/calculs';
 import { trimestresRetraite, JOURS_CHOMAGE_PAR_TRIMESTRE, HEURES_SMIC_PAR_TRIMESTRE } from '../lib/retraite';
 
-type Onglet = 'perte' | 'maternite' | 'conges' | 'retraite' | 'audiens';
+type Onglet = 'perte' | 'maternite' | 'conges' | 'retraite' | 'audiens' | 'recours';
 
 /** ok = true (rempli), false (non rempli) ou null (à vérifier auprès de France Travail). */
 const Condition: React.FC<{ ok: boolean | null; children: React.ReactNode }> = ({ ok, children }) => (
@@ -67,7 +67,7 @@ const PerteOnglet: React.FC = () => {
   const aj = sim.ajBrute;
   const tauxPAS = (parseFloat(data.tauxPrelevement) || 0) / 100;
   const versement = (brut: number) => brut * sim.ratioNetAJ * (1 - tauxPAS);
-  const rattrapage = simulerRattrapage(sim.dateAnniversaire, aj, sim.franchiseCPAuto.total, sim.franchiseSalAuto.total);
+  const rattrapage = simulerRattrapage(sim.dateReexamen, aj, sim.franchiseCPAuto.total, sim.franchiseSalAuto.total);
   const droitAFD = afd(profil);
   const t = TITRES[diag.issue];
 
@@ -562,6 +562,105 @@ const RetraiteOnglet: React.FC = () => {
   );
 };
 
+const Etape: React.FC<{ n: number; titre: string; children: React.ReactNode }> = ({ n, titre, children }) => (
+  <li className="flex gap-3">
+    <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-lime-300">{n}</span>
+    <div className="text-sm leading-relaxed text-slate-600">
+      <p className="font-semibold text-slate-900">{titre}</p>
+      {children}
+    </div>
+  </li>
+);
+
+const RecoursOnglet: React.FC = () => (
+  <div className="space-y-6">
+    <div className="grid gap-4 lg:grid-cols-2">
+      <Card title="Un désaccord avec France Travail" icon={<Landmark className="h-4 w-4" />}>
+        <p className="mb-4 text-sm text-slate-500">AJ mal calculée, heures oubliées, trop-perçu, radiation… Gratuit à chaque étape.</p>
+        <ol className="space-y-4">
+          <Etape n={1} titre="Réclamation">
+            Depuis votre espace personnel ou en agence, avec vos justificatifs (contrats, bulletins, attestations). Réponse écrite sous 7 jours en principe.
+          </Etape>
+          <Etape n={2} titre="Médiateur régional de France Travail">
+            Si la réponse ne vous convient pas ou sans réponse sous 15 jours. Par courriel ou courrier, avec toutes les pièces. Pour certains litiges, cette
+            médiation est obligatoire avant le tribunal.
+          </Etape>
+          <Etape n={3} titre="Tribunal">Judiciaire ou administratif selon la décision, dans le délai indiqué sur la notification.</Etape>
+        </ol>
+        <p className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          <Lien href="https://www.francetravail.fr/candidat/vos-droits-et-demarches/reclamations/comment-contester-une-decision-d.html">Contester une décision</Lien>
+          <Lien href="https://www.francetravail.fr/candidat/vos-droits-et-demarches/reclamations/le-mediateur-de-pole-emploi.html">Le médiateur</Lien>
+        </p>
+      </Card>
+
+      <Card title="Un désaccord avec un employeur" icon={<Building2 className="h-4 w-4" />}>
+        <p className="mb-4 text-sm text-slate-500">Salaire ou cachet impayé, attestation employeur (AEM) jamais envoyée, heures mal déclarées…</p>
+        <ol className="space-y-4">
+          <Etape n={1} titre="Demande écrite">
+            Réclamez par courriel ou lettre recommandée ce qui manque (paiement, AEM, bulletin). Gardez une copie : elle servira de preuve. Prévenez France
+            Travail si une AEM manque, avec vos bulletins de paie.
+          </Etape>
+          <Etape n={2} titre="Inspection du travail">Gratuite, elle renseigne et peut intervenir auprès de l'employeur.</Etape>
+          <Etape n={3} titre="Conseil de prud'hommes">
+            Gratuit, sans avocat obligatoire. Les salaires impayés se réclament sur les 3 dernières années.
+          </Etape>
+        </ol>
+        <p className="mt-4 text-xs">
+          <Lien href="https://code.travail.gouv.fr/">Code du travail numérique</Lien>
+        </p>
+      </Card>
+    </div>
+
+    <div className="grid gap-4 md:grid-cols-3">
+      <Card title="Entre intermittents" icon={<Users className="h-4 w-4" />}>
+        <ul className="space-y-3 text-sm text-slate-600">
+          <li>
+            <b className="text-slate-900">CIP-IDF</b> : permanence gratuite sur les droits des intermittents, le lundi de 15 h à 18 h (Paris 12e), ou par courriel à{' '}
+            <a href="mailto:cap@cip-idf.org" className="font-semibold text-brand-700">
+              cap@cip-idf.org
+            </a>
+            . <Lien href="https://www.cip-idf.org/">cip-idf.org</Lien>
+          </li>
+          <li>
+            <b className="text-slate-900">Matermittentes</b> : maternité et intermittence. <Lien href="https://www.matermittentes.com/">matermittentes.com</Lien>
+          </li>
+          <li>
+            <b className="text-slate-900">Syndicats du spectacle</b> (artistes, musiciens, techniciens) : conseil et défense de leurs adhérents.
+          </li>
+        </ul>
+      </Card>
+
+      <Card title="Consultations juridiques gratuites" icon={<Gavel className="h-4 w-4" />}>
+        <ul className="space-y-3 text-sm text-slate-600">
+          <li>
+            <b className="text-slate-900">Point-justice</b> (ex-maisons de la justice et du droit) : avocats et juristes, gratuit et confidentiel. <Lien href="https://www.justice.fr/">justice.fr</Lien>
+          </li>
+          <li>
+            <b className="text-slate-900">Aide juridictionnelle</b> : frais d'avocat pris en charge selon vos ressources.
+          </li>
+          <li>
+            <b className="text-slate-900">Défenseur des droits</b> : litiges avec un service public, dont France Travail. <Lien href="https://www.defenseurdesdroits.fr/">defenseurdesdroits.fr</Lien>
+          </li>
+        </ul>
+      </Card>
+
+      <Card title="Accompagnement social" icon={<HeartPulse className="h-4 w-4" />}>
+        <p className="text-sm leading-relaxed text-slate-600">
+          Audiens propose aux intermittents en difficulté un entretien, un suivi social et des aides ponctuelles.
+        </p>
+        <p className="mt-3 text-xs">
+          <Lien href="https://www.artistesettechniciensduspectacle.fr/">artistesettechniciensduspectacle.fr</Lien>
+        </p>
+      </Card>
+    </div>
+
+    <Notice icon={<Scale className="h-4 w-4" />}>
+      Avant toute démarche, rassemblez vos contrats, bulletins de paie, attestations employeur et la notification de France Travail : l'export JSON et l'export Excel
+      du simulateur vous donnent le récapitulatif de vos heures et salaires.
+    </Notice>
+  </div>
+);
+
 const MesDroitsPage: React.FC = () => {
   const [onglet, setOnglet] = useState<Onglet>('perte');
   return (
@@ -580,6 +679,7 @@ const MesDroitsPage: React.FC = () => {
           { value: 'conges', label: 'Congés Spectacles', icon: <Palmtree className="h-4 w-4" /> },
           { value: 'retraite', label: 'Retraite', icon: <Landmark className="h-4 w-4" /> },
           { value: 'audiens', label: 'Audiens', icon: <HeartPulse className="h-4 w-4" /> },
+          { value: 'recours', label: 'Aide et recours', icon: <Scale className="h-4 w-4" /> },
         ]}
       />
       {onglet === 'perte' && <PerteOnglet />}
@@ -587,6 +687,7 @@ const MesDroitsPage: React.FC = () => {
       {onglet === 'conges' && <CongesOnglet />}
       {onglet === 'retraite' && <RetraiteOnglet />}
       {onglet === 'audiens' && <AudiensOnglet />}
+      {onglet === 'recours' && <RecoursOnglet />}
     </div>
   );
 };

@@ -25,7 +25,7 @@ const ContratsPage: React.FC = () => {
   const contrats = [...data.contrats].sort((a, b) => b.date.localeCompare(a.date));
   const margeParMois = new Map(sim.suivi.mois.map((m) => [m.cle, m]));
   const plafondEns = data.plus50ans ? PLAFOND_ENSEIGNEMENT_50_ANS : PLAFOND_ENSEIGNEMENT;
-  const nbCols = data.multiAnnexe ? 11 : 10;
+  const nbCols = data.multiAnnexe ? 9 : 8;
 
   const groupes: { cle: string; items: typeof contrats }[] = [];
   for (const c of contrats) {
@@ -83,23 +83,22 @@ const ContratsPage: React.FC = () => {
         </Notice>
       )}
 
-      <Card bodyClassName="pt-2">
+      <Card bodyClassName="px-2 pb-4 pt-2 sm:px-3">
         <div className="overflow-x-auto">
-          <table className={`w-full text-sm ${data.multiAnnexe ? 'min-w-[1080px]' : 'min-w-[1000px]'}`}>
+          <table className={`w-full text-sm ${data.multiAnnexe ? 'min-w-[900px]' : 'min-w-[820px]'}`}>
             <thead className="whitespace-nowrap text-left text-xs font-medium text-slate-400">
               <tr>
-                <th className="px-3 py-3">Début</th>
-                <th className="px-3 py-3">Fin</th>
-                <th className="px-3 py-3">Employeur</th>
-                <th className="px-3 py-3">Type</th>
-                {data.multiAnnexe && <th className="px-3 py-3">Annexe</th>}
-                <th className="px-3 py-3 text-right">Nombre</th>
-                <th className="px-3 py-3 text-right">Brut (€)</th>
-                <th className="px-3 py-3 text-right">Heures</th>
-                <th className="px-3 py-3 text-right">€ / h</th>
-                <th className="px-3 py-3 text-center">
+                <th className="px-2 py-3">Début</th>
+                <th className="px-2 py-3">Fin</th>
+                <th className="px-2 py-3">Employeur</th>
+                <th className="px-2 py-3">Type</th>
+                {data.multiAnnexe && <th className="px-2 py-3">Annexe</th>}
+                <th className="px-2 py-3 text-right">Nombre</th>
+                <th className="px-2 py-3 text-right">Brut (€)</th>
+                <th className="px-2 py-3 text-right">
                   <span className="inline-flex items-center gap-1">
-                    507 h <Aide terme="pra" />
+                    Heures
+                    <Aide texte="Vert : compte pour les 507 h (dans la période de référence). Gris : hors période. Barré : ne compte pas pour les 507 h (hors spectacle, non salarié). En dessous, le taux horaire brut." />
                   </span>
                 </th>
                 <th className="w-10 px-2 py-3"></th>
@@ -141,37 +140,37 @@ const ContratsPage: React.FC = () => {
                     const inPRA = compte && dansPRA.has(c.id);
                     return (
                       <tr key={c.id} className={`group hover:bg-slate-50/70 ${compte && !inPRA ? 'text-slate-400' : ''}`}>
-                        <td className="px-3 py-1.5">
-                          <input type="date" value={c.date} onChange={(e) => updateContrat(c.id, 'date', e.target.value)} className="input-sm" />
+                        <td className="px-2 py-1.5">
+                          <input type="date" value={c.date} onChange={(e) => updateContrat(c.id, 'date', e.target.value)} className="input-sm w-[126px] px-2" />
                         </td>
-                        <td className="px-3 py-1.5">
+                        <td className="px-2 py-1.5">
                           <input
                             type="date"
                             value={c.dateFin ?? ''}
                             min={c.date}
                             onChange={(e) => updateContrat(c.id, 'dateFin', e.target.value || undefined)}
-                            className="input-sm"
+                            className="input-sm w-[126px] px-2"
                             title="Facultatif : répartit le contrat sur plusieurs mois"
                           />
                         </td>
-                        <td className="px-3 py-1.5">
+                        <td className="px-2 py-1.5">
                           <input
                             type="text"
                             value={c.employeur}
                             onChange={(e) => updateContrat(c.id, 'employeur', e.target.value)}
-                            className="input-sm min-w-[140px]"
+                            className="input-sm w-full min-w-[120px]"
                             placeholder={c.type === 'Arret' ? 'Motif (facultatif)' : c.type === 'Formation' ? 'Organisme' : 'Employeur'}
                           />
                         </td>
-                        <td className="px-3 py-1.5">
-                          <select value={c.type} onChange={(e) => updateContrat(c.id, 'type', e.target.value as TypeContrat)} className="input-sm min-w-[150px]" title={t.aide}>
+                        <td className="px-2 py-1.5">
+                          <select value={c.type} onChange={(e) => updateContrat(c.id, 'type', e.target.value as TypeContrat)} className="input-sm w-[124px]" title={t.aide}>
                             {GROUPES.map((gr) => (
                               <optgroup key={gr} label={gr}>
                                 {(Object.keys(TYPES) as TypeContrat[])
                                   .filter((k) => TYPES[k].groupe === gr)
                                   .map((k) => (
                                     <option key={k} value={k}>
-                                      {TYPES[k].label}
+                                      {TYPES[k].court}
                                     </option>
                                   ))}
                               </optgroup>
@@ -179,7 +178,7 @@ const ContratsPage: React.FC = () => {
                           </select>
                         </td>
                         {data.multiAnnexe && (
-                          <td className="px-3 py-1.5">
+                          <td className="px-2 py-1.5">
                             {estSpectacle(c) ? (
                               <select value={c.annexe ?? data.annexe} onChange={(e) => updateContrat(c.id, 'annexe', e.target.value as Annexe)} className="input-sm w-20">
                                 <option value="A8">A8</option>
@@ -190,7 +189,7 @@ const ContratsPage: React.FC = () => {
                             )}
                           </td>
                         )}
-                        <td className="px-3 py-1.5">
+                        <td className="px-2 py-1.5">
                           {t.aNombre ? (
                             <div className="flex items-center justify-end gap-1">
                               <input
@@ -201,15 +200,15 @@ const ContratsPage: React.FC = () => {
                                 min="0"
                                 step={c.type === 'Cachet' || c.type === 'Arret' ? 1 : 0.5}
                               />
-                              <span className="w-12 text-xs text-slate-400">{t.unite}</span>
+                              <span className="w-9 truncate text-[11px] text-slate-400">{t.unite === 'cachets' ? 'cach.' : t.unite === 'jours' ? 'j' : t.unite}</span>
                             </div>
                           ) : (
-                            <span className="block pr-14 text-right text-xs text-slate-400" title={t.aide}>
+                            <span className="block pr-11 text-right text-xs text-slate-400" title={t.aide}>
                               auto
                             </span>
                           )}
                         </td>
-                        <td className="px-3 py-1.5">
+                        <td className="px-2 py-1.5">
                           {t.aBrut ? (
                             <input
                               type="number"
@@ -223,20 +222,15 @@ const ContratsPage: React.FC = () => {
                             <span className="block pr-3 text-right text-slate-300">—</span>
                           )}
                         </td>
-                        <td className="num px-3 py-1.5 text-right">
-                          <Badge tone={t.tone}>{nb(heures, 1)} h</Badge>
-                        </td>
-                        <td className="num px-3 py-1.5 text-right text-slate-500">{t.aBrut && heures > 0 ? nb(c.brut / heures, 1) : '—'}</td>
-                        <td className="px-3 py-1.5 text-center">
-                          {!compte ? (
-                            <span className="text-xs text-slate-300" title={t.aide}>
-                              non
-                            </span>
-                          ) : inPRA ? (
-                            <Badge tone="lime">oui</Badge>
-                          ) : (
-                            <Badge>hors</Badge>
-                          )}
+                        <td className="num px-2 py-1.5 text-right" title={!compte ? 'Ne compte pas pour les 507 h' : inPRA ? 'Compte pour les 507 h' : 'Hors période de référence'}>
+                          <span
+                            className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                              !compte ? 'bg-slate-100 text-slate-400 line-through' : inPRA ? 'bg-lime-200 text-brand-900' : 'bg-slate-100 text-slate-500'
+                            }`}
+                          >
+                            {nb(heures, 1)} h
+                          </span>
+                          {t.aBrut && heures > 0 && <div className="mt-0.5 whitespace-nowrap text-[11px] text-slate-400">{nb(c.brut / heures, 1)} €/h</div>}
                         </td>
                         <td className="px-2 py-1.5">
                           <button

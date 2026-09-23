@@ -17,7 +17,7 @@ export const Marque: React.FC<{ compact?: boolean }> = ({ compact }) => (
     <Logo size={compact ? 30 : 36} />
     <div className="leading-tight">
       <div className={`font-bold tracking-tight text-white ${compact ? 'text-base' : 'text-lg'}`}>Intermittence</div>
-      {!compact && <div className="text-[11px] text-brand-200">Simulateur annexes 8 et 10</div>}
+      {!compact && <div className="text-[11px] text-brand-200">Annexes 8 et 10</div>}
     </div>
   </div>
 );

@@ -24,7 +24,9 @@ describe('simulation : droit en cours et contrats postérieurs', () => {
     expect(s.sourceAJ).toBe('notifiee');
     expect(s.ajBrute).toBe(69.83);
     expect(s.dateIndem).toBe('2025-12-28');
-    expect(s.dateAnniversaire).toBe('2026-12-28');
+    // 12 mois (365 jours) après la fin du contrat d'ouverture (26/12/2025), examen le lendemain
+    expect(s.dateAnniversaire).toBe('2026-12-26');
+    expect(s.dateReexamen).toBe('2026-12-27');
   });
 
   it('dateFinPRA fige la période de référence', () => {

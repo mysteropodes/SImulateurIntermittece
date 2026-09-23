@@ -45,7 +45,7 @@ const HistoriquePage: React.FC = () => {
     if (
       !confirm(
         `Clôturer le droit du ${formatDateFR(enCours.dateDebut)} (AJ ${enCours.ajBrute != null ? eur(enCours.ajBrute) : '—'}) et démarrer le droit suivant au ${formatDateFR(
-          sim.dateAnniversaire
+          sim.dateReexamen
         )} ?\n\nLe droit actuel passe dans l'historique ; saisissez ensuite la nouvelle AJ notifiée dans « Mon droit ».`
       )
     )
@@ -62,8 +62,8 @@ const HistoriquePage: React.FC = () => {
           salaires: enCours.source === 'contrats' && enCours.salaires != null ? Math.round(enCours.salaires * 100) / 100 : undefined,
         },
       ],
-      dateIndem: sim.dateAnniversaire,
-      dateFinContrat: '',
+      dateIndem: sim.dateReexamen,
+      dateFinContrat: sim.affiliation.periode.fin,
       dateFinPRA: '',
       ajBruteNotifiee: '',
       franchisesAuto: true,

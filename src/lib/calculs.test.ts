@@ -17,6 +17,8 @@ import {
   paliers,
   margeAvantJourPerdu,
   heuresContrat,
+  dateAnniversaireDepuis,
+  examenAnniversaire,
   type Contrat,
 } from './calculs';
 
@@ -486,5 +488,40 @@ describe('période de référence et activités non spectacle', () => {
       contrat({ id: 's', date: '2026-10-25', type: 'Arret', nombre: 3, brut: 0 }),
     ];
     expect(periodeReference(cs).fin).toBe('2026-09-23');
+  });
+});
+
+describe('date anniversaire et examen (guide p. 9, 18, exemple 13)', () => {
+  it('12 mois (365 jours) après la fin du contrat d’ouverture', () => {
+    expect(dateAnniversaireDepuis('2025-12-26')).toBe('2026-12-26');
+    expect(dateAnniversaireDepuis('2022-08-18')).toBe('2023-08-18');
+  });
+
+  it('pas de contrat spectacle le jour J : examen le lendemain, période jusqu’au dernier contrat avant', () => {
+    const e = examenAnniversaire([contrat({ id: 'a', date: '2023-08-10', dateFin: '2023-08-18' }), contrat({ id: 'b', date: '2023-09-10', dateFin: '2023-09-12' })], '2023-09-01');
+    expect(e.reporte).toBe(false);
+    expect(e.dateExamen).toBe('2023-09-02');
+    expect(e.finContratRetenue).toBe('2023-08-18');
+  });
+
+  it('contrat spectacle en cours le jour J : examen reporté au premier jour chômé, contrats enchaînés compris', () => {
+    const e = examenAnniversaire(
+      [
+        contrat({ id: 'a', date: '2023-08-28', dateFin: '2023-09-03' }),
+        contrat({ id: 'b', date: '2023-09-04', dateFin: '2023-09-15' }),
+        contrat({ id: 'c', date: '2023-09-20', dateFin: '2023-09-22' }),
+      ],
+      '2023-09-01'
+    );
+    expect(e.reporte).toBe(true);
+    expect(e.dateExamen).toBe('2023-09-16');
+    expect(e.finContratRetenue).toBe('2023-09-15');
+    expect(e.contratsEnCours.map((c) => c.id)).toEqual(['a', 'b']);
+  });
+
+  it('un contrat hors spectacle ou non salarié le jour J ne reporte pas l’examen', () => {
+    const e = examenAnniversaire([contrat({ id: 'r', date: '2023-08-28', dateFin: '2023-09-10', type: 'RegimeGeneral' })], '2023-09-01');
+    expect(e.reporte).toBe(false);
+    expect(e.dateExamen).toBe('2023-09-02');
   });
 });

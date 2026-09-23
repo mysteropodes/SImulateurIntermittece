@@ -10,6 +10,9 @@ import {
   suiviMensuel,
   projectionEligibilite,
   paliers,
+  dateAnniversaireDepuis,
+  examenAnniversaire,
+  type ExamenAnniversaire,
   parseDate,
   toISODate,
   addMonths,
@@ -43,9 +46,13 @@ export interface Simulation {
   franchiseSal: FranchiseSalaires;
   /** Premier jour indemnisable retenu. */
   dateIndem: string;
-  /** Date anniversaire = début du droit + 12 mois (fin de l'indemnisation). */
+  /** Date anniversaire = fin du contrat d'ouverture + 12 mois (365 j) : dernier jour du droit. */
   dateAnniversaire: string;
   dateFinDroit: string;
+  /** Examen des nouveaux droits (lendemain, ou reporté si un contrat spectacle est en cours). */
+  examen: ExamenAnniversaire;
+  /** Début du prochain droit si réadmission (jour de l'examen). */
+  dateReexamen: string;
   suivi: ResultatSuivi;
   projection: Projection;
   paliers: Paliers;
@@ -59,7 +66,21 @@ const toNum = (s: string, fallback = 0): number => {
 };
 
 export function simulation(data: IntermittenceData, aujourdHui = new Date()): Simulation {
-  const aff = affiliation(data.contrats, data.annexe, data.dateFinPRA || undefined, { plus50ans: data.plus50ans });
+  const opts = { plus50ans: data.plus50ans };
+
+  // Début du droit en cours et date anniversaire (12 mois après la fin du contrat qui l'a ouvert)
+  let dateIndem = data.dateIndem;
+  if (!dateIndem) {
+    const finOuverture = data.dateFinContrat || affiliation(data.contrats, data.annexe, undefined, opts).periode.fin;
+    dateIndem = toISODate(addDays(parseDate(finOuverture), 1));
+  }
+  const finContratOuverture = data.dateFinContrat || toISODate(addDays(parseDate(dateIndem), -1));
+  const dateAnniversaire = dateAnniversaireDepuis(finContratOuverture);
+  const dateFinDroit = dateAnniversaire;
+  const examen = examenAnniversaire(data.contrats, dateAnniversaire);
+
+  // Période de référence du réexamen : jusqu'à la fin de contrat retenue à la date anniversaire
+  const aff = affiliation(data.contrats, data.annexe, data.dateFinPRA || examen.finContratRetenue || undefined, opts);
   const ajCalculee = calculAJ(data.annexe, aff.sr, aff.nht);
   const sjmValeur = sjm(data.annexe, aff.sr, aff.nht);
   const smic = smicAt(aff.periode.fin);
@@ -84,13 +105,6 @@ export function simulation(data: IntermittenceData, aujourdHui = new Date()): Si
     const mensuelle = Math.max(0, Math.floor(toNum(data.joursSalaires))) || (totalSal > 0 ? Math.ceil(totalSal / 8) : 0);
     fsal = { total: totalSal, mensuelle };
   }
-
-  const dateIndem =
-    data.dateIndem ||
-    (data.dateFinContrat ? toISODate(addDays(parseDate(data.dateFinContrat), 1)) : toISODate(addDays(parseDate(aff.periode.fin), 1)));
-  const anniversaire = addMonths(parseDate(dateIndem), 12);
-  const dateAnniversaire = toISODate(anniversaire);
-  const dateFinDroit = toISODate(addDays(anniversaire, -1));
 
   const debut = parseDate(dateIndem);
   const suivi = suiviMensuel({
@@ -130,6 +144,8 @@ export function simulation(data: IntermittenceData, aujourdHui = new Date()): Si
     dateIndem,
     dateAnniversaire,
     dateFinDroit,
+    examen,
+    dateReexamen: examen.dateExamen,
     suivi,
     projection,
   };
@@ -215,8 +231,8 @@ export function historiqueDroits(data: IntermittenceData, sim: Simulation): Lign
   lignes.push({
     id: 'projection',
     statut: 'projection',
-    dateDebut: sim.dateAnniversaire,
-    dateAnniversaire: anniversaire(sim.dateAnniversaire),
+    dateDebut: sim.dateReexamen,
+    dateAnniversaire: dateAnniversaireDepuis(aff.periode.fin),
     ajBrute: aff.eligible ? sim.ajCalculee.aj : null,
     heures: aff.nht,
     salaires: aff.sr,

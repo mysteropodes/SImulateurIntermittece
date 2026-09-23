@@ -41,7 +41,7 @@ function Resume() {
         </div>
       </div>
       <div className="flex justify-between text-xs text-brand-200">
-        <span>Date anniversaire</span>
+        <span>Anniversaire</span>
         <span className="num text-white">{formatDateFR(sim.dateAnniversaire)}</span>
       </div>
     </div>
@@ -52,7 +52,7 @@ function Shell() {
   return (
     <div className="min-h-screen lg:flex">
       {/* Barre latérale (bureau) */}
-      <aside className="hidden w-64 flex-shrink-0 flex-col gap-6 overflow-y-auto bg-brand-900 px-4 py-6 lg:sticky lg:top-0 lg:flex lg:h-screen">
+      <aside className="hidden w-60 flex-shrink-0 flex-col gap-6 overflow-y-auto bg-brand-900 px-4 py-6 lg:sticky lg:top-0 lg:flex lg:h-screen">
         <div className="px-2">
           <Marque />
         </div>
@@ -73,8 +73,8 @@ function Shell() {
         <Navigation variant="top" />
       </header>
 
-      <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
-        <div className="mx-auto max-w-6xl">
+      <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+        <div className="mx-auto max-w-7xl">
           <Routes>
             <Route path="/" element={<SynthesePage />} />
             <Route path="/mon-aj" element={<MonAJPage />} />
@@ -88,7 +88,10 @@ function Shell() {
             <Route path="/export" element={<ExportExcelPage />} />
           </Routes>
           <footer className="mt-12 border-t border-slate-300/60 pt-4 text-xs text-slate-500">
-            Règles du guide « Intermittents du spectacle » de France Travail. Montants indicatifs : seule votre notification fait foi.
+            Règles du guide « Intermittents du spectacle » de France Travail. Montants indicatifs : seule votre notification fait foi. Code source :{' '}
+            <a href="https://github.com/mysteropodes/SImulateurIntermittece" target="_blank" rel="noreferrer" className="font-semibold text-brand-700 underline underline-offset-2">
+              GitHub
+            </a>
           </footer>
         </div>
       </main>

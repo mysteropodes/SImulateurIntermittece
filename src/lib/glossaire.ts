@@ -10,7 +10,9 @@ export const GLOSSAIRE = {
   sr: "Salaire de référence : total de vos salaires bruts spectacle dans la période de référence (hors enseignement). Il fait la partie A de l'AJ.",
   sjm: "Salaire journalier moyen = salaire de référence ÷ (heures ÷ 8) en annexe 8, ÷ (heures ÷ 10) en annexe 10. Il sert pour la retenue retraite et la franchise salaires.",
   dateAnniversaire:
-    "Fin du droit, 12 mois après son ouverture. France Travail réexamine alors vos heures : 507 h pour repartir sur un nouveau droit, sinon clause de rattrapage ou allocations de solidarité.",
+    "Fin du droit : 12 mois (365 jours) après la fin du contrat qui l'a ouvert. France Travail réexamine vos heures le lendemain, ou au premier jour sans contrat spectacle si vous travaillez ce jour-là : 507 h pour un nouveau droit, sinon rattrapage ou allocations de solidarité.",
+  reportExamen:
+    "Si un contrat spectacle est en cours le jour de la date anniversaire, l'examen est reporté au premier jour sans contrat. Votre période de référence se termine alors plus tard (vous gagnez ces heures mais perdez les plus anciennes) et la date anniversaire suivante recule d'autant.",
   jni: "Jours non indemnisables : les mois où vous travaillez, on retire (heures ÷ 8) × 1,4 jours en annexe 8, ou (heures ÷ 10) × 1,3 en annexe 10, arrondi à l'entier inférieur. Peu importe la durée réelle des journées.",
   marge: "Heures que vous pouvez encore travailler ce mois-ci avant qu'un jour d'ARE de plus ne saute. En annexe 8, un jour saute toutes les 5,71 h environ.",
   seuil: "Au-delà de 26 jours de travail (annexe 8) ou 27 (annexe 10) dans le mois, soit 208 h ou 270 h, aucune ARE n'est versée ce mois-là.",
