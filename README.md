@@ -56,6 +56,7 @@ Les montants sont indicatifs : seule la notification de France Travail fait foi.
 
 ## Protection des données
 
+- Au premier lancement, des données d'exemple fictives sont affichées (bandeau sur l'accueil) : « Réinitialiser » pour saisir les vôtres, ou importez votre fichier.
 - Les données sont conservées uniquement dans votre navigateur (`localStorage`) — rien n'est envoyé à un serveur.
 - Exportez-les en JSON pour les sauvegarder ou les transférer, réimportez-les sur un autre poste. Les exports de l'ancienne version sont acceptés.
 - Aucun cookie ni traqueur.
