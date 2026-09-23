@@ -11,7 +11,13 @@
  */
 
 export type Annexe = 'A8' | 'A10';
-export type TypeContrat = 'Cachet' | 'Heures';
+/**
+ * Enseignement : heures dispensées dans un établissement agréé. Elles comptent
+ * pour les 507 h (70 h max, 120 h à 50 ans et plus) mais ni dans le SR ni
+ * dans les NHT du calcul de l'AJ (guide p. 7 et 11). Elles restent une
+ * activité déclarée pour le cumul mensuel.
+ */
+export type TypeContrat = 'Cachet' | 'Heures' | 'Enseignement';
 
 export interface Contrat {
   id: string;
@@ -49,6 +55,12 @@ export const PLAFOND_HEURES_MOIS: Record<Annexe, number> = {
   A10: 28 * HEURES_PAR_CACHET, // 28 cachets
 };
 export const PLAFOND_HEURES_MOIS_A8_MULTI = 250;
+/** Heures d'enseignement retenues pour les 507 h (120 h à 50 ans et plus). */
+export const PLAFOND_ENSEIGNEMENT = 70;
+export const PLAFOND_ENSEIGNEMENT_50_ANS = 120;
+/** Seuils de la formule : au-delà, la partie A (salaire) et la partie B (heures) progressent beaucoup moins. */
+export const SEUIL_SR: Record<Annexe, number> = { A8: 14400, A10: 13700 };
+export const SEUIL_NHT: Record<Annexe, number> = { A8: 720, A10: 690 };
 /** Délai d'attente à chaque ouverture / réadmission (max 7 j par 12 mois). */
 export const DELAI_ATTENTE = 7;
 /** Franchise congés payés : 2,5 jours par 24 jours travaillés, plafonnée à 30 jours. */
@@ -156,7 +168,7 @@ export function formatDateFR(d: Date | string): string {
 // ---------------------------------------------------------------------------
 
 export function heuresContrat(c: Pick<Contrat, 'type' | 'nombre'>): number {
-  return c.type === 'Cachet' ? c.nombre * HEURES_PAR_CACHET : c.nombre;
+  return c.type === 'Cachet' ? c.nombre * HEURES_PAR_CACHET : c.nombre; // Heures et Enseignement : en heures
 }
 
 export function finContrat(c: Contrat): string {
@@ -252,12 +264,19 @@ export interface Affiliation {
   periode: PeriodeReference;
   /** Contrats retenus (au moins partiellement) dans la PRA. */
   contrats: Contrat[];
-  /** Heures travaillées retenues (NHT), après plafonnement mensuel. */
+  /** Heures travaillées retenues pour l'AJ (NHT), après plafonnement mensuel, hors enseignement. */
   nht: number;
-  /** Heures avant plafonnement mensuel. */
+  /** Heures avant plafonnement mensuel, hors enseignement. */
   heuresBrutes: number;
-  /** Salaire de référence (SR) : bruts des contrats retenus. */
+  /** Heures d'enseignement dans la PRA, et la part retenue pour les 507 h. */
+  heuresEnseignement: number;
+  heuresEnseignementRetenues: number;
+  /** Heures comptées pour la condition des 507 h = NHT + enseignement retenu. */
+  heuresAffiliation: number;
+  /** Salaire de référence (SR) : bruts des contrats retenus, hors enseignement. */
   sr: number;
+  /** Salaires d'enseignement dans la PRA (hors SR, mais comptés pour la franchise salaires). */
+  brutEnseignement: number;
   /** Jours de travail = NHT / 8 (A8) ou / 10 (A10). */
   joursTravail: number;
   eligible: boolean;
@@ -266,23 +285,40 @@ export interface Affiliation {
   moisPlafonnes: string[];
 }
 
+export interface OptionsAffiliation {
+  /** 50 ans ou plus à la fin du contrat retenu : 120 h d'enseignement au lieu de 70. */
+  plus50ans?: boolean;
+}
+
 /**
  * Décompte des heures et des salaires dans la PRA, avec le plafond mensuel
  * (208 h / 250 h multi‑employeurs en annexe 8, 28 cachets en annexe 10).
  */
-export function affiliation(contrats: Contrat[], annexe: Annexe, dateFinContrat?: string): Affiliation {
+export function affiliation(
+  contrats: Contrat[],
+  annexe: Annexe,
+  dateFinContrat?: string,
+  options: OptionsAffiliation = {}
+): Affiliation {
   const periode = periodeReference(contrats, dateFinContrat);
   const retenus = contrats.filter((c) => finContrat(c) >= periode.debut && c.date <= periode.fin);
+  const cleDebut = periode.debut.slice(0, 7);
+  const cleFin = periode.fin.slice(0, 7);
 
   // On ne garde que la part des contrats située dans la PRA.
   const parMois = new Map<string, { heures: number; brut: number; employeurs: Set<string> }>();
   let heuresBrutes = 0;
   let sr = 0;
+  let heuresEnseignement = 0;
+  let brutEnseignement = 0;
   for (const c of retenus) {
     for (const p of repartirContrat(c)) {
-      const cleDebut = periode.debut.slice(0, 7);
-      const cleFin = periode.fin.slice(0, 7);
       if (p.cle < cleDebut || p.cle > cleFin) continue;
+      if (c.type === 'Enseignement') {
+        heuresEnseignement += p.heures;
+        brutEnseignement += p.brut;
+        continue;
+      }
       heuresBrutes += p.heures;
       sr += p.brut;
       const cur = parMois.get(p.cle) ?? { heures: 0, brut: 0, employeurs: new Set<string>() };
@@ -306,16 +342,23 @@ export function affiliation(contrats: Contrat[], annexe: Annexe, dateFinContrat?
     nht += Math.min(m.heures, plafond);
   }
 
+  const plafondEns = options.plus50ans ? PLAFOND_ENSEIGNEMENT_50_ANS : PLAFOND_ENSEIGNEMENT;
+  const heuresEnseignementRetenues = Math.min(heuresEnseignement, plafondEns);
+  const heuresAffiliation = nht + heuresEnseignementRetenues;
   const joursTravail = nht / DIVISEUR_JOUR[annexe];
   return {
     periode,
     contrats: retenus,
     nht,
     heuresBrutes,
+    heuresEnseignement,
+    heuresEnseignementRetenues,
+    heuresAffiliation,
     sr,
+    brutEnseignement,
     joursTravail,
-    eligible: nht >= SEUIL_HEURES,
-    heuresManquantes: Math.max(0, SEUIL_HEURES - nht),
+    eligible: heuresAffiliation >= SEUIL_HEURES,
+    heuresManquantes: Math.max(0, SEUIL_HEURES - heuresAffiliation),
     moisPlafonnes: moisPlafonnes.sort(),
   };
 }
@@ -355,9 +398,9 @@ export interface ResultatAJ {
 export function calculAJ(annexe: Annexe, sr: number, nht: number, params: ParamsAJ = {}): ResultatAJ {
   const ajMin = params.ajMin ?? AJ_MIN;
   const ajMax = params.ajMax ?? AJ_MAX;
-  const seuilSR = annexe === 'A8' ? 14400 : 13700;
+  const seuilSR = SEUIL_SR[annexe];
   const coefA = annexe === 'A8' ? 0.42 : 0.36;
-  const seuilH = annexe === 'A8' ? 720 : 690;
+  const seuilH = SEUIL_NHT[annexe];
   const coefC = annexe === 'A8' ? 0.4 : 0.7;
 
   const A = (ajMin * (coefA * Math.min(sr, seuilSR) + 0.05 * Math.max(0, sr - seuilSR))) / 5000;
@@ -383,6 +426,53 @@ export function calculAJ(annexe: Annexe, sr: number, nht: number, params: Params
 export function sjm(annexe: Annexe, sr: number, nht: number): number {
   const jours = nht / DIVISEUR_JOUR[annexe];
   return jours > 0 ? sr / jours : 0;
+}
+
+export interface Paliers {
+  seuilSR: number;
+  seuilNHT: number;
+  /** Gain d'AJ brute pour 1 000 € de salaire en plus (au taux marginal actuel). */
+  gainPour1000Euros: number;
+  /** Gain d'AJ brute pour 10 h de plus (partie B seule). */
+  gainPour10Heures: number;
+  srAuDelaDuSeuil: boolean;
+  nhtAuDelaDuSeuil: boolean;
+}
+
+/** Position par rapport aux seuils de la formule et gains marginaux. */
+export function paliers(annexe: Annexe, sr: number, nht: number, ajMin = AJ_MIN): Paliers {
+  const seuilSR = SEUIL_SR[annexe];
+  const seuilNHT = SEUIL_NHT[annexe];
+  const sansPlafond = { ajMin, ajMax: Infinity };
+  return {
+    seuilSR,
+    seuilNHT,
+    gainPour1000Euros: calculAJ(annexe, sr + 1000, nht, sansPlafond).A - calculAJ(annexe, sr, nht, sansPlafond).A,
+    gainPour10Heures: calculAJ(annexe, sr, nht + 10, sansPlafond).B - calculAJ(annexe, sr, nht, sansPlafond).B,
+    srAuDelaDuSeuil: sr >= seuilSR,
+    nhtAuDelaDuSeuil: nht >= seuilNHT,
+  };
+}
+
+/**
+ * Heures à ajouter (à un taux horaire brut donné) pour que l'AJ calculée
+ * atteigne une cible. null si inatteignable (plafond) ; 0 si déjà atteinte.
+ */
+export function heuresPourAJ(annexe: Annexe, sr: number, nht: number, cible: number, tauxHoraire: number): number | null {
+  const aj = (h: number) => calculAJ(annexe, sr + h * tauxHoraire, nht + h).aj;
+  if (aj(0) >= cible) return 0;
+  if (cible > AJ_MAX || aj(100000) < cible) return null;
+  let lo = 0;
+  let hi = 100000;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) / 2;
+    if (aj(mid) >= cible) hi = mid;
+    else lo = mid;
+  }
+  // plus petit nombre entier d'heures qui atteint la cible
+  let h = Math.floor(lo);
+  while (aj(h) < cible) h++;
+  return h;
 }
 
 export interface RetenuesAJ {
@@ -474,6 +564,16 @@ export function activiteMois(annexe: Annexe, heures: number): ActiviteMois {
   return { joursTravail, joursNonIndemnisables, seuilAtteint };
 }
 
+/**
+ * Heures qu'on peut encore travailler dans le mois avant qu'un jour
+ * supplémentaire devienne non indemnisable (ex. A8 : 42 h → 7 j ; 8 j à partir de 45,72 h).
+ */
+export function margeAvantJourPerdu(annexe: Annexe, heures: number): number {
+  const { joursNonIndemnisables } = activiteMois(annexe, heures);
+  const prochain = ((joursNonIndemnisables + 1) * DIVISEUR_JOUR[annexe]) / COEF_NON_INDEMNISABLE[annexe];
+  return Math.max(0, prochain - heures);
+}
+
 // ---------------------------------------------------------------------------
 // Suivi mensuel
 // ---------------------------------------------------------------------------
@@ -515,6 +615,8 @@ export interface MoisSuivi {
   joursTravail: number;
   joursNonIndemnisables: number;
   seuilAtteint: boolean;
+  /** Heures encore possibles avant de perdre un jour d'ARE de plus. */
+  margeHeures: number;
   delaiAttente: number;
   franchiseCP: number;
   franchiseSal: number;
@@ -666,6 +768,7 @@ export function suiviMensuel(p: ParamsSuivi): ResultatSuivi {
       joursTravail: act.joursTravail,
       joursNonIndemnisables: act.joursNonIndemnisables,
       seuilAtteint: act.seuilAtteint,
+      margeHeures: margeAvantJourPerdu(p.annexe, heures),
       delaiAttente: delai,
       franchiseCP: fcp,
       franchiseSal: fsal,

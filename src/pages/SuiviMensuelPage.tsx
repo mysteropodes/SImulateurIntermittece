@@ -1,184 +1,181 @@
 import React, { useState } from 'react';
 import { useIntermittence } from '../context/IntermittenceContext';
 import { useSimulation } from '../hooks/useSimulation';
-import { Calendar, Info, AlertTriangle } from 'lucide-react';
-import ImportExportBar from '../components/ImportExportBar';
-import { Notice, eur, nb } from '../components/ui';
-import { COEF_NON_INDEMNISABLE, DIVISEUR_JOUR, SEUIL_JOURS_TRAVAIL, plafondCumul, formatDateFR } from '../lib/calculs';
+import { BarChart3, ChevronDown, Table2 } from 'lucide-react';
+import { Card, Kpi, Notice, PageHeader, eur, nb } from '../components/ui';
+import { COEF_NON_INDEMNISABLE, DIVISEUR_JOUR, SEUIL_JOURS_TRAVAIL, cleMois, plafondCumul } from '../lib/calculs';
+
+const MOIS_COURT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 
 const SuiviMensuelPage: React.FC = () => {
   const { data } = useIntermittence();
   const sim = useSimulation();
-  const [afficherInfos, setAfficherInfos] = useState(false);
+  const [aide, setAide] = useState(false);
   const { mois, totaux } = sim.suivi;
-  const nbPlafond = mois.filter((m) => m.plafondApplique).length;
-  const nbSeuil = mois.filter((m) => m.seuilAtteint).length;
   const annexe = data.annexe;
+  const courant = cleMois(new Date());
+  const max = Math.max(1, ...mois.map((m) => m.net + m.areVersee));
 
-  const td = (v: number, cls = '', dec = 0, hide0 = true) => (
-    <td className={`py-2 px-2 text-right ${v > 0 ? cls : ''}`}>{v > 0 || !hide0 ? nb(v, dec) : '-'}</td>
-  );
+  const cell = (v: number, dec = 0) => (v > 0 ? nb(v, dec) : <span className="text-slate-300">–</span>);
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Suivi mensuel</h1>
-        <p className="text-gray-600">
-          Mois par mois : activité déclarée, jours non indemnisables, délai et franchises, ARE brute puis nette, plafond de cumul.
-        </p>
+    <div className="space-y-6">
+      <PageHeader title="Suivi mensuel" description="Ce que vous touchez mois par mois : salaires, jours non indemnisables, franchises et ARE." />
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Kpi label="Total net sur le droit" value={eur(totaux.totalNet, 0)} sub="salaires + ARE versée" tone="brand" />
+        <Kpi label="ARE versée" value={eur(totaux.areVersee, 0)} sub={`${totaux.joursIndemnises} jours indemnisés`} tone="green" />
+        <Kpi label="Salaires nets" value={eur(totaux.net, 0)} sub={`${nb(totaux.heures, 0)} h travaillées`} />
+        <Kpi label="Délai et franchises" value={`${totaux.delaiAttente + totaux.franchiseCP + totaux.franchiseSal} j`} sub={`délai ${totaux.delaiAttente} · CP ${totaux.franchiseCP} · salaires ${totaux.franchiseSal}`} tone="amber" />
       </div>
 
-      <ImportExportBar />
-
-      <div className="bg-amber-50 rounded-lg p-4 border border-amber-200 mb-6">
-        <div className="flex items-start">
-          <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 mr-2 flex-shrink-0" />
-          <div className="text-sm">
-            <h3 className="font-semibold text-amber-800 mb-1 flex items-center">
-              Comment est calculé chaque mois
-              <button onClick={() => setAfficherInfos(!afficherInfos)} className="ml-2 text-sm text-amber-600 hover:text-amber-800">
-                {afficherInfos ? 'Masquer' : 'Afficher'}
-              </button>
-            </h3>
-            {afficherInfos && (
-              <ol className="text-amber-700 mt-2 space-y-1 list-decimal list-inside">
-                <li>
-                  Jours de travail = heures du mois / {DIVISEUR_JOUR[annexe]}. Si ≥ {SEUIL_JOURS_TRAVAIL[annexe]} jours : aucune ARE ce mois-là.
-                </li>
-                <li>
-                  Jours non indemnisables (JNI) = ⌊jours de travail × {COEF_NON_INDEMNISABLE[annexe]}⌋, déduits des jours du mois situés dans le droit.
-                </li>
-                <li>Sur les jours restants, dans l'ordre : délai d'attente (7 j, une fois), forfait congés payés, forfait salaires, puis reliquats reportés.</li>
-                <li>ARE brute = jours indemnisés × AJ brute ({eur(sim.ajBrute)}).</li>
-                <li>
-                  Plafond de cumul : salaires bruts + ARE ≤ 118 % du PMSS ({eur(plafondCumul(mois[0]?.annee ?? new Date().getFullYear()))} en {mois[0]?.annee}). Au-delà,
-                  l'ARE est réduite et les jours recalculés (arrondi supérieur).
-                </li>
-                <li>
-                  ARE nette = brute × {nb(sim.ratioNetAJ * 100, 1)} % (retraite complémentaire, CSG/CRDS), puis prélèvement à la source de {data.tauxPrelevement || 0} %.
-                  Salaires nets estimés à {100 - (parseFloat(data.tauxCotisationsSalaire) || 0)} % du brut.
-                </li>
-              </ol>
-            )}
-          </div>
+      <Card title="Revenus nets par mois" icon={<BarChart3 className="h-4 w-4" />}>
+        <div className="flex h-44 items-end gap-1 sm:gap-2.5">
+          {mois.map((m) => {
+            const hSal = (m.net / max) * 100;
+            const hAre = (m.areVersee / max) * 100;
+            return (
+              <div key={m.cle} className="group flex min-w-0 flex-1 flex-col items-center gap-1" title={`${m.label} — salaires ${eur(m.net, 0)} + ARE ${eur(m.areVersee, 0)}`}>
+                <div className="num hidden text-[10px] text-slate-500 group-hover:block">{nb(m.totalNet, 0)}</div>
+                <div className="flex h-36 w-full flex-col justify-end overflow-hidden rounded-md bg-slate-50">
+                  <div className="w-full bg-emerald-400" style={{ height: `${hAre}%` }} />
+                  <div className="w-full bg-brand-400" style={{ height: `${hSal}%` }} />
+                </div>
+                <div className={`w-full truncate text-center text-[10px] ${m.cle === courant ? 'font-semibold text-brand-700' : 'text-slate-400'}`}>{MOIS_COURT[m.mois - 1]}</div>
+              </div>
+            );
+          })}
         </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
-        <div className="p-4 flex items-center bg-blue-50 border-b border-blue-200">
-          <Calendar className="w-5 h-5 text-blue-600 mr-2" />
-          <h2 className="text-lg font-semibold text-blue-800">
-            Droit du {formatDateFR(sim.dateIndem)} au {formatDateFR(sim.dateFinDroit)}
-          </h2>
-          <span className="text-sm text-blue-600 ml-auto">
-            {sim.ajBrute > 0 ? `AJ brute ${eur(sim.ajBrute)} ${sim.sourceAJ === 'notifiee' ? '(notifiée)' : '(calculée)'} — nette ${eur(sim.retenues.net)}` : 'AJ non définie (non éligible)'}
+        <div className="mt-3 flex gap-4 text-xs text-slate-500">
+          <span className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-sm bg-emerald-400" /> ARE versée
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-sm bg-brand-400" /> Salaires nets
           </span>
         </div>
+      </Card>
 
+      <Card
+        title="Détail"
+        icon={<Table2 className="h-4 w-4" />}
+        bodyClassName=""
+        action={
+          <button onClick={() => setAide(!aide)} className="btn-ghost py-1 text-xs">
+            Comment c'est calculé <ChevronDown className={`h-3.5 w-3.5 transition ${aide ? 'rotate-180' : ''}`} />
+          </button>
+        }
+      >
+        {aide && (
+          <ol className="list-inside list-decimal space-y-1 border-b border-slate-100 bg-slate-50 px-5 py-4 text-xs text-slate-600">
+            <li>
+              Jours de travail = heures / {DIVISEUR_JOUR[annexe]}, quelle que soit la durée réelle des journées. À partir de {SEUIL_JOURS_TRAVAIL[annexe]} jours : pas
+              d'ARE ce mois-là.
+            </li>
+            <li>Jours non indemnisables = ⌊jours de travail × {COEF_NON_INDEMNISABLE[annexe]}⌋, retirés des jours du mois compris dans le droit.</li>
+            <li>
+              <b>Marge</b> = heures encore possibles avant qu'un jour de plus devienne non indemnisable (un palier tous les{' '}
+              {nb(DIVISEUR_JOUR[annexe] / COEF_NON_INDEMNISABLE[annexe], 2)} h).
+            </li>
+            <li>Puis dans l'ordre : délai d'attente, franchise congés payés, franchise salaires (le forfait non appliqué est reporté).</li>
+            <li>
+              ARE = jours indemnisés × {eur(sim.ajBrute)}. Salaires + ARE bruts limités à 118 % du plafond de la Sécu ({eur(plafondCumul(new Date().getFullYear()), 0)} en{' '}
+              {new Date().getFullYear()}).
+            </li>
+            <li>
+              Versé = ARE × {nb(sim.ratioNetAJ * 100, 1)} % (retenues sociales) − {nb(parseFloat(data.tauxPrelevement) || 0, 2)} % d'impôt. Salaires nets ≈{' '}
+              {100 - (parseFloat(data.tauxCotisationsSalaire) || 0)} % du brut.
+            </li>
+          </ol>
+        )}
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white text-sm">
-            <thead>
-              <tr className="bg-gray-800 text-white">
-                <th className="py-2 px-2 text-left">Mois</th>
-                <th className="py-2 px-2 text-right">Jours</th>
-                <th className="py-2 px-2 text-right" title="Jours du mois hors période de droit">Hors droit</th>
-                <th className="py-2 px-2 text-right">Heures</th>
-                <th className="py-2 px-2 text-right">Brut (€)</th>
-                <th className="py-2 px-2 text-right">Net (€)</th>
-                <th className="py-2 px-2 text-right" title={`Heures / ${DIVISEUR_JOUR[annexe]}`}>J. trav.</th>
-                <th className="py-2 px-2 text-right" title={`× ${COEF_NON_INDEMNISABLE[annexe]}`}>JNI</th>
-                <th className="py-2 px-2 text-right">Délai</th>
-                <th className="py-2 px-2 text-right">Fr. CP</th>
-                <th className="py-2 px-2 text-right">Fr. Sal.</th>
-                <th className="py-2 px-2 text-right">J. ind.</th>
-                <th className="py-2 px-2 text-right">ARE brute</th>
-                <th className="py-2 px-2 text-right">ARE nette</th>
-                <th className="py-2 px-2 text-right">Total net</th>
+          <table className="num w-full min-w-[980px] text-sm">
+            <thead className="bg-slate-50 text-xs font-medium uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-3 py-2.5 text-left">Mois</th>
+                <th className="px-2 py-2.5 text-right">Heures</th>
+                <th className="px-2 py-2.5 text-right">Brut</th>
+                <th className="px-2 py-2.5 text-right" title={`Heures / ${DIVISEUR_JOUR[annexe]}`}>J. trav.</th>
+                <th className="px-2 py-2.5 text-right" title="Jours non indemnisables">JNI</th>
+                <th className="px-2 py-2.5 text-right" title="Heures possibles avant de perdre un jour de plus">Marge</th>
+                <th className="px-2 py-2.5 text-right">Délai</th>
+                <th className="px-2 py-2.5 text-right">CP</th>
+                <th className="px-2 py-2.5 text-right">Sal.</th>
+                <th className="px-2 py-2.5 text-right">J. payés</th>
+                <th className="px-2 py-2.5 text-right">ARE brute</th>
+                <th className="px-2 py-2.5 text-right">ARE versée</th>
+                <th className="px-3 py-2.5 text-right">Total net</th>
               </tr>
             </thead>
-            <tbody>
-              {mois.map((m, index) => (
-                <tr
-                  key={m.cle}
-                  className={`border-b ${index % 2 === 0 ? 'bg-gray-50' : ''} ${m.plafondApplique || m.seuilAtteint ? 'bg-amber-50' : ''} ${
-                    m.joursHorsDroit === m.joursDansMois ? 'bg-gray-100 text-gray-400' : ''
-                  }`}
-                >
-                  <td className="py-2 px-2 text-left font-semibold">{m.label}</td>
-                  <td className="py-2 px-2 text-right">{m.joursDansMois}</td>
-                  {td(m.joursHorsDroit, 'bg-red-50')}
-                  {td(m.heures, 'bg-green-50', 1)}
-                  {td(m.brut, 'bg-green-50', 2)}
-                  {td(m.net, 'bg-green-50', 2)}
-                  {td(m.joursTravail, 'bg-yellow-50', 1)}
-                  <td className={`py-2 px-2 text-right ${m.joursNonIndemnisables > 0 ? 'bg-yellow-50' : ''}`}>
-                    {m.seuilAtteint ? <span className="text-amber-700 font-semibold" title="Seuil de jours de travail atteint : aucune ARE">seuil</span> : m.joursNonIndemnisables > 0 ? m.joursNonIndemnisables : '-'}
-                  </td>
-                  {td(m.delaiAttente, 'bg-orange-50')}
-                  {td(m.franchiseCP, 'bg-orange-50')}
-                  {td(m.franchiseSal, 'bg-orange-50')}
-                  {td(m.joursIndemnises, 'bg-blue-50')}
-                  <td className={`py-2 px-2 text-right ${m.areBrute > 0 ? 'bg-blue-50' : ''} ${m.plafondApplique ? 'bg-amber-100' : ''}`}>
-                    {m.areBrute > 0 ? (
-                      <>
-                        {nb(m.areBrute, 2)}
-                        {m.plafondApplique && <span className="text-amber-600 ml-1">*</span>}
-                      </>
-                    ) : (
-                      '-'
-                    )}
-                  </td>
-                  {td(m.areVersee, 'bg-blue-50', 2)}
-                  <td className={`py-2 px-2 text-right font-semibold ${m.totalNet > 0 ? 'bg-blue-100' : ''}`}>{nb(m.totalNet, 2)}</td>
-                </tr>
-              ))}
-
-              <tr className="bg-gray-100 font-bold border-t-2 border-gray-400">
-                <td className="py-2 px-2 text-left">Total</td>
-                <td className="py-2 px-2 text-right">-</td>
-                <td className="py-2 px-2 text-right">-</td>
-                <td className="py-2 px-2 text-right">{nb(totaux.heures, 1)}</td>
-                <td className="py-2 px-2 text-right">{nb(totaux.brut, 2)}</td>
-                <td className="py-2 px-2 text-right">{nb(totaux.net, 2)}</td>
-                <td className="py-2 px-2 text-right">{nb(totaux.joursTravail, 1)}</td>
-                <td className="py-2 px-2 text-right">-</td>
-                <td className="py-2 px-2 text-right">{totaux.delaiAttente}</td>
-                <td className="py-2 px-2 text-right">{totaux.franchiseCP}</td>
-                <td className="py-2 px-2 text-right">{totaux.franchiseSal}</td>
-                <td className="py-2 px-2 text-right">{totaux.joursIndemnises}</td>
-                <td className="py-2 px-2 text-right">{nb(totaux.areBrute, 2)}</td>
-                <td className="py-2 px-2 text-right">{nb(totaux.areVersee, 2)}</td>
-                <td className="py-2 px-2 text-right">{nb(totaux.totalNet, 2)}</td>
-              </tr>
+            <tbody className="divide-y divide-slate-100">
+              {mois.map((m) => {
+                const horsDroit = m.joursHorsDroit === m.joursDansMois;
+                return (
+                  <tr key={m.cle} className={`${horsDroit ? 'text-slate-300' : ''} ${m.cle === courant ? 'bg-brand-50/60' : 'hover:bg-slate-50/60'}`}>
+                    <td className="px-3 py-2 text-left">
+                      <span className="font-medium">{m.label}</span>
+                      <span className="ml-1.5 text-xs text-slate-400">
+                        {m.joursHorsDroit > 0 && !horsDroit ? `${m.joursDansMois - m.joursHorsDroit}/${m.joursDansMois} j` : `${m.joursDansMois} j`}
+                      </span>
+                    </td>
+                    <td className="px-2 py-2 text-right">{cell(m.heures, 1)}</td>
+                    <td className="px-2 py-2 text-right">{cell(m.brut, 0)}</td>
+                    <td className="px-2 py-2 text-right">{cell(m.joursTravail, 1)}</td>
+                    <td className="px-2 py-2 text-right">
+                      {m.seuilAtteint ? <span className="rounded bg-rose-50 px-1.5 text-xs font-medium text-rose-600">seuil</span> : cell(m.joursNonIndemnisables)}
+                    </td>
+                    <td className={`px-2 py-2 text-right text-xs ${!horsDroit && m.margeHeures < 2 ? 'font-semibold text-amber-600' : 'text-slate-500'}`}>
+                      {horsDroit || m.seuilAtteint ? '' : `${nb(m.margeHeures, 1)} h`}
+                    </td>
+                    <td className="px-2 py-2 text-right text-amber-700">{cell(m.delaiAttente)}</td>
+                    <td className="px-2 py-2 text-right text-amber-700">{cell(m.franchiseCP)}</td>
+                    <td className="px-2 py-2 text-right text-amber-700">{cell(m.franchiseSal)}</td>
+                    <td className="px-2 py-2 text-right font-medium">{cell(m.joursIndemnises)}</td>
+                    <td className="px-2 py-2 text-right">
+                      {cell(m.areBrute, 0)}
+                      {m.plafondApplique && (
+                        <span className="ml-1 text-amber-600" title="Plafond de cumul salaires + ARE atteint">
+                          *
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-2 py-2 text-right text-emerald-700">{cell(m.areVersee, 0)}</td>
+                    <td className="px-3 py-2 text-right font-semibold">{m.totalNet > 0 ? eur(m.totalNet, 0) : <span className="text-slate-300">–</span>}</td>
+                  </tr>
+                );
+              })}
             </tbody>
+            <tfoot className="border-t-2 border-slate-200 bg-slate-50 font-semibold">
+              <tr>
+                <td className="px-3 py-2.5 text-left">Total</td>
+                <td className="px-2 py-2.5 text-right">{nb(totaux.heures, 0)}</td>
+                <td className="px-2 py-2.5 text-right">{nb(totaux.brut, 0)}</td>
+                <td className="px-2 py-2.5 text-right">{nb(totaux.joursTravail, 1)}</td>
+                <td colSpan={2}></td>
+                <td className="px-2 py-2.5 text-right">{totaux.delaiAttente}</td>
+                <td className="px-2 py-2.5 text-right">{totaux.franchiseCP}</td>
+                <td className="px-2 py-2.5 text-right">{totaux.franchiseSal}</td>
+                <td className="px-2 py-2.5 text-right">{totaux.joursIndemnises}</td>
+                <td className="px-2 py-2.5 text-right">{nb(totaux.areBrute, 0)}</td>
+                <td className="px-2 py-2.5 text-right">{nb(totaux.areVersee, 0)}</td>
+                <td className="px-3 py-2.5 text-right">{eur(totaux.totalNet, 0)}</td>
+              </tr>
+            </tfoot>
           </table>
         </div>
+      </Card>
 
-        {(nbPlafond > 0 || nbSeuil > 0 || sim.suivi.franchiseCPRestante > 0 || sim.suivi.franchiseSalRestante > 0) && (
-          <div className="px-4 py-2 text-xs text-amber-700 bg-amber-50 border-t border-amber-200 space-y-1">
-            {nbPlafond > 0 && <p>* Plafond de cumul salaires + ARE (118 % du PMSS) atteint sur {nbPlafond} mois : ARE réduite.</p>}
-            {nbSeuil > 0 && <p>Seuil de {SEUIL_JOURS_TRAVAIL[annexe]} jours de travail atteint sur {nbSeuil} mois : aucune ARE, forfaits de franchise reportés.</p>}
-            {(sim.suivi.franchiseCPRestante > 0 || sim.suivi.franchiseSalRestante > 0) && (
-              <p>
-                Franchises non consommées à la fin du droit : {sim.suivi.franchiseCPRestante} j CP, {sim.suivi.franchiseSalRestante} j salaires → un trop-perçu équivalent
-                serait notifié.
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-
-      <Notice icon={<Info className="w-5 h-5 text-blue-600" />}>
-        <p className="font-semibold mb-1">Légende</p>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-          <div className="flex items-center"><div className="w-4 h-4 bg-green-50 rounded border border-green-200 mr-1"></div><span>Revenus du travail</span></div>
-          <div className="flex items-center"><div className="w-4 h-4 bg-yellow-50 rounded border border-yellow-200 mr-1"></div><span>Jours de travail / JNI</span></div>
-          <div className="flex items-center"><div className="w-4 h-4 bg-orange-50 rounded border border-orange-200 mr-1"></div><span>Délai / franchises</span></div>
-          <div className="flex items-center"><div className="w-4 h-4 bg-red-50 rounded border border-red-200 mr-1"></div><span>Hors période de droit</span></div>
-          <div className="flex items-center"><div className="w-4 h-4 bg-blue-50 rounded border border-blue-200 mr-1"></div><span>Indemnisation</span></div>
-          <div className="flex items-center"><div className="w-4 h-4 bg-amber-50 rounded border border-amber-200 mr-1"></div><span>Plafond / seuil</span></div>
-        </div>
-      </Notice>
+      {(mois.some((m) => m.plafondApplique) || sim.suivi.franchiseCPRestante > 0 || sim.suivi.franchiseSalRestante > 0) && (
+        <Notice tone="warn">
+          {mois.some((m) => m.plafondApplique) && <p>* Plafond de cumul salaires + ARE atteint : l'ARE du mois est réduite.</p>}
+          {(sim.suivi.franchiseCPRestante > 0 || sim.suivi.franchiseSalRestante > 0) && (
+            <p>
+              Franchises non consommées à la date anniversaire ({sim.suivi.franchiseCPRestante} j CP, {sim.suivi.franchiseSalRestante} j salaires) : un trop-perçu
+              équivalent vous serait réclamé.
+            </p>
+          )}
+        </Notice>
+      )}
     </div>
   );
 };

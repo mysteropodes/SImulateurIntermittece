@@ -7,10 +7,10 @@ Application en ligne : [mysteropodes.github.io/SImulateurIntermittece](https://m
 
 ## Fonctionnalités
 
-- **Synthèse** : période de référence, heures retenues, SR, SJM, AJ brute / nette, date anniversaire
+- **Synthèse** : AJ, heures, ARE du mois, date anniversaire, détail A + B + C, et un panneau **Paliers et leviers** (position par rapport aux seuils de la formule, gain par 1 000 € ou 10 h, heures nécessaires pour viser une AJ)
 - **Mon AJ** : annexe, dates du droit, délai d'attente, AJ notifiée (facultatif), franchises automatiques ou saisies, taux de prélèvement
-- **Contrats** : saisie des contrats (cachets ou heures, date de début / fin), heures dans la période de référence
-- **Suivi mensuel** : mois par mois, activité, jours non indemnisables, délai et franchises, ARE brute puis nette, plafond de cumul
+- **Contrats** : cachets, heures ou enseignement, regroupés par mois avec les jours non indemnisables et la marge
+- **Suivi mensuel** : graphique et tableau mois par mois, avec la **marge** (heures possibles avant de perdre un jour d'ARE)
 - **Tableau de bord** : indicateurs, frise du droit, projection avant les 507 h, comparaison en cas de réexamen
 - **Export Excel** : classeur avec contrats, synthèse et suivi mensuel
 
@@ -22,6 +22,7 @@ exemples chiffrés du guide (`npm test`).
 
 | Règle | Détail |
 |---|---|
+| Enseignement | compte pour les 507 h (70 h max, 120 h à 50 ans et plus), mais ni dans les heures (partie B) ni dans le salaire (partie A) de l'AJ ; reste une activité du mois |
 | Affiliation | 507 h sur les 12 mois précédant la fin du contrat de référence ; 1 cachet = 12 h ; plafond mensuel 208 h (250 h multi-employeurs) en annexe 8, 28 cachets en annexe 10 |
 | AJ brute | A + B + C avec AJ minimale 31,96 € — A8 : A = AJmin × (0,42 × SR ≤ 14 400 € + 0,05 × au-delà) / 5000, B = AJmin × (0,26 × NHT ≤ 720 h + 0,08 × au-delà) / 507, C = AJmin × 0,40 — A10 : 0,36 / 13 700 €, 690 h, C = AJmin × 0,70 |
 | Plancher / plafond | 38 € (A8), 44 € (A10) / 174,80 € |
