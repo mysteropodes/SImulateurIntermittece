@@ -89,4 +89,4 @@ npm run build    # build de production
 npm run deploy   # publication sur GitHub Pages (branche gh-pages)
 ```
 
-À chaque déploiement, incrémentez `CACHE` dans [`public/sw.js`](public/sw.js) pour que l'application installée se mette à jour.
+Le service worker reçoit une version unique à chaque build : l'application installée se met à jour d'elle-même.
