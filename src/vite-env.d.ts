@@ -8,3 +8,5 @@ interface ImportMeta {
     readonly DEV: boolean;
   };
 } 
+/** Date du build (YYYY-MM-DD), injectée par vite.config.ts. */
+declare const __DATE_MAJ__: string;
