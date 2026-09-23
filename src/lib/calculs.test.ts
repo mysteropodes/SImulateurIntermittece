@@ -13,6 +13,9 @@ import {
   repartirContrat,
   smicAt,
   projectionEligibilite,
+  heuresPourAJ,
+  paliers,
+  margeAvantJourPerdu,
   type Contrat,
 } from './calculs';
 
@@ -336,5 +339,73 @@ describe('SMIC', () => {
     expect(smicAt('2025-01-01').horaire).toBe(11.88);
     expect(smicAt('2026-07-01').horaire).toBe(12.31);
     expect(smicAt('2024-06-30').journalier).toBeCloseTo(81.55, 2);
+  });
+});
+
+describe('Enseignement (guide p. 7 et 11)', () => {
+  const base = [
+    contrat({ id: 'a', date: '2026-01-10', type: 'Heures', nombre: 200, brut: 6000, employeur: 'A' }),
+    contrat({ id: 'b', date: '2026-03-10', type: 'Heures', nombre: 200, brut: 6000, employeur: 'A' }),
+    contrat({ id: 'c', date: '2026-05-10', type: 'Heures', nombre: 100, brut: 3000, employeur: 'A' }),
+  ];
+
+  it('compte pour les 507 h mais ni dans les NHT ni dans le SR', () => {
+    const a = affiliation([...base, contrat({ id: 'e', date: '2026-04-10', type: 'Enseignement', nombre: 17, brut: 650 })], 'A8', '2026-06-30');
+    expect(a.nht).toBe(500);
+    expect(a.sr).toBe(15000);
+    expect(a.heuresEnseignement).toBe(17);
+    expect(a.brutEnseignement).toBe(650);
+    expect(a.heuresAffiliation).toBe(517);
+    expect(a.eligible).toBe(true);
+  });
+
+  it('plafonné à 70 h, 120 h à 50 ans et plus', () => {
+    const ens = contrat({ id: 'e', date: '2026-04-10', type: 'Enseignement', nombre: 150, brut: 4000 });
+    expect(affiliation([...base, ens], 'A8', '2026-06-30').heuresEnseignementRetenues).toBe(70);
+    expect(affiliation([...base, ens], 'A8', '2026-06-30', { plus50ans: true }).heuresEnseignementRetenues).toBe(120);
+  });
+
+  it('reste une activité du mois pour le cumul (jours non indemnisables)', () => {
+    const r = suiviMensuel({
+      annexe: 'A8',
+      contrats: [contrat({ date: '2026-06-30', type: 'Enseignement', nombre: 17, brut: 650 })],
+      ajBrute: 69.83,
+      ratioNetAJ: 1,
+      tauxPrelevement: 0,
+      ratioNetSalaire: 1,
+      dateDebut: '2026-06-01',
+      delaiAttente: false,
+      franchiseCP: { total: 0, forfaitMensuel: 2 },
+      franchiseSal: { total: 0, mensuelle: 0 },
+      nbMois: 1,
+    });
+    expect(r.mois[0].joursNonIndemnisables).toBe(Math.floor((17 / 8) * 1.4));
+  });
+});
+
+describe('Paliers et leviers', () => {
+  it('AJ recalculée de Cyril (690 h, 22 716 €) = 65,41 € ; 262 h à 33 €/h pour revenir à 69,83 €', () => {
+    expect(calculAJ('A8', 22716, 690).aj).toBeCloseTo(65.41, 2);
+    expect(heuresPourAJ('A8', 22716, 690, 69.83, 33)).toBe(262);
+    expect(heuresPourAJ('A8', 22716, 690, 60, 33)).toBe(0);
+    expect(heuresPourAJ('A8', 22716, 690, 500, 33)).toBeNull();
+  });
+
+  it('gains marginaux : au-delà des seuils, 1 000 € = +0,32 €/j et 10 h = +0,05 €/j', () => {
+    const p = paliers('A8', 22716, 800);
+    expect(p.srAuDelaDuSeuil).toBe(true);
+    expect(p.nhtAuDelaDuSeuil).toBe(true);
+    expect(p.gainPour1000Euros).toBeCloseTo((31.96 * 0.05 * 1000) / 5000, 6);
+    expect(p.gainPour10Heures).toBeCloseTo((31.96 * 0.08 * 10) / 507, 6);
+    const q = paliers('A8', 10000, 600);
+    expect(q.gainPour1000Euros).toBeCloseTo((31.96 * 0.42 * 1000) / 5000, 6);
+    expect(q.gainPour10Heures).toBeCloseTo((31.96 * 0.26 * 10) / 507, 6);
+  });
+
+  it('marge avant le prochain jour perdu : 42 h → 3,71 h ; 48 h → 2,29 h (A8)', () => {
+    expect(margeAvantJourPerdu('A8', 42)).toBeCloseTo(45.714 - 42, 2);
+    expect(margeAvantJourPerdu('A8', 48)).toBeCloseTo(51.43 - 48, 2);
+    expect(margeAvantJourPerdu('A8', 0)).toBeCloseTo(5.714, 2);
+    expect(margeAvantJourPerdu('A10', 0)).toBeCloseTo(10 / 1.3, 2);
   });
 });

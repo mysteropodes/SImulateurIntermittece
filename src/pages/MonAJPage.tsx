@@ -1,12 +1,9 @@
 import React from 'react';
 import { useIntermittence } from '../context/IntermittenceContext';
 import { useSimulation } from '../hooks/useSimulation';
-import { Info, Database, CheckCircle, Calculator, Scissors } from 'lucide-react';
-import ImportExportBar from '../components/ImportExportBar';
-import { Card, Notice, eur, nb } from '../components/ui';
-import { AJ_MIN, AJ_MAX, PLANCHER, formatDateFR, repartitionFranchiseSalaires } from '../lib/calculs';
-
-const input = 'border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500';
+import { CalendarDays, FileCheck, Scissors, Receipt } from 'lucide-react';
+import { Card, Field, Segmented, InputSuffix, PageHeader, Badge, eur, nb } from '../components/ui';
+import { AJ_MIN, formatDateFR, repartitionFranchiseSalaires } from '../lib/calculs';
 
 const MonAJPage: React.FC = () => {
   const { data, updateField } = useIntermittence();
@@ -14,276 +11,229 @@ const MonAJPage: React.FC = () => {
   const { affiliation: aff, ajCalculee } = sim;
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Mon allocation journalière</h1>
-        <p className="text-gray-600">
-          Paramètres de votre droit. L'AJ, les franchises et le suivi mensuel se calculent à partir des contrats saisis dans
-          l'onglet Contrats.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Mon droit"
+        description="Paramètres de votre situation. L'AJ, les franchises et le suivi mensuel se calculent à partir de vos contrats."
+      />
 
-      <ImportExportBar />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card title="Situation" icon={<CalendarDays className="h-4 w-4" />} bodyClassName="p-5 space-y-5">
+          <Field label="Annexe">
+            <Segmented
+              value={data.annexe}
+              onChange={(v) => updateField('annexe', v)}
+              options={[
+                { value: 'A8', label: 'Technicien (annexe 8)' },
+                { value: 'A10', label: 'Artiste (annexe 10)' },
+              ]}
+            />
+          </Field>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <Card
-          title={
-            <>
-              <Database className="w-5 h-5 mr-2 text-blue-600" />
-              Situation
-            </>
-          }
-        >
-          <label className="block text-sm font-medium mb-1">Annexe</label>
-          <select value={data.annexe} onChange={(e) => updateField('annexe', e.target.value === 'A10' ? 'A10' : 'A8')} className={`w-full mb-4 ${input}`}>
-            <option value="A8">Ouvrier / Technicien (annexe 8)</option>
-            <option value="A10">Artiste (annexe 10)</option>
-          </select>
-
-          <label className="block text-sm font-medium mb-1">Fin du contrat ayant ouvert le droit</label>
-          <input type="date" value={data.dateFinContrat} onChange={(e) => updateField('dateFinContrat', e.target.value)} className={`w-full ${input}`} />
-          <p className="text-xs text-gray-500 mt-1 mb-4">Facultatif : sert de valeur par défaut au début du droit (lendemain).</p>
-
-          <label className="block text-sm font-medium mb-1">Indemnisable à partir du</label>
-          <input type="date" value={data.dateIndem} onChange={(e) => updateField('dateIndem', e.target.value)} className={`w-full ${input}`} />
-          <p className="text-xs text-gray-500 mt-1 mb-4">Début du droit en cours. Vide = lendemain du contrat ayant ouvert le droit, sinon du dernier contrat.</p>
-
-          <label className="block text-sm font-medium mb-1">Figer la fin de la période de référence</label>
-          <input type="date" value={data.dateFinPRA} onChange={(e) => updateField('dateFinPRA', e.target.value)} className={`w-full ${input}`} />
-          <p className="text-xs text-gray-500 mt-1 mb-4">
-            Facultatif. Par défaut, les 507 h sont recherchées sur les 12 mois qui précèdent la fin de votre dernier contrat — c'est ce que France Travail
-            examinera à la date anniversaire. Renseignez une date pour figer la période (ex. rejouer l'ouverture d'un ancien droit).
-          </p>
-
-          <div className="flex items-center">
-            <span className="mr-3 text-sm font-medium">Délai d'attente de 7 jours</span>
-            <button
-              type="button"
-              className={`px-3 py-1 rounded-l ${data.delaiAttente ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-              onClick={() => updateField('delaiAttente', true)}
-            >
-              Oui
-            </button>
-            <button
-              type="button"
-              className={`px-3 py-1 rounded-r ${!data.delaiAttente ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-              onClick={() => updateField('delaiAttente', false)}
-            >
-              Non
-            </button>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Indemnisable à partir du" hint="Début du droit en cours.">
+              <input type="date" value={data.dateIndem} onChange={(e) => updateField('dateIndem', e.target.value)} className="input" />
+            </Field>
+            <Field label="Fin du contrat ayant ouvert le droit" hint="Facultatif : début du droit = lendemain.">
+              <input type="date" value={data.dateFinContrat} onChange={(e) => updateField('dateFinContrat', e.target.value)} className="input" />
+            </Field>
           </div>
-          <p className="text-xs text-gray-500 mt-1">S'applique à chaque ouverture ou réadmission, au plus 7 jours par période de 12 mois.</p>
+
+          <Field
+            label="Figer la fin de la période de référence"
+            hint={
+              <>
+                Facultatif. Par défaut, les 507 h sont cherchées sur les 12 mois précédant votre dernier contrat — actuellement du{' '}
+                {formatDateFR(aff.periode.debut)} au {formatDateFR(aff.periode.fin)}.
+              </>
+            }
+          >
+            <input type="date" value={data.dateFinPRA} onChange={(e) => updateField('dateFinPRA', e.target.value)} className="input sm:max-w-[50%]" />
+          </Field>
+
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-slate-100 pt-4">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-slate-700">Délai d'attente (7 j)</span>
+              <Segmented value={data.delaiAttente} onChange={(v) => updateField('delaiAttente', v)} options={[{ value: true, label: 'Oui' }, { value: false, label: 'Non' }]} />
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-slate-700">50 ans ou plus</span>
+              <Segmented value={data.plus50ans} onChange={(v) => updateField('plus50ans', v)} options={[{ value: true, label: 'Oui' }, { value: false, label: 'Non' }]} />
+            </div>
+          </div>
+          <p className="-mt-2 text-xs text-slate-500">À 50 ans et plus, 120 h d'enseignement comptent pour les 507 h (70 h sinon).</p>
+        </Card>
+
+        <Card title="Droit notifié par France Travail" icon={<FileCheck className="h-4 w-4" />} bodyClassName="p-5 space-y-5">
+          <Field
+            label="AJ brute de votre notification"
+            hint={
+              sim.sourceAJ === 'notifiee' ? (
+                <>
+                  Utilisée pour le suivi mensuel. Recalculée sur vos contrats actuels : <b>{eur(ajCalculee.aj)}</b> (
+                  {ajCalculee.aj - sim.ajBrute >= 0 ? '+' : ''}
+                  {eur(ajCalculee.aj - sim.ajBrute)}).
+                </>
+              ) : (
+                'Facultatif. Vide = AJ calculée sur vos contrats.'
+              )
+            }
+          >
+            <InputSuffix suffix="€ / jour">
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={data.ajBruteNotifiee}
+                onChange={(e) => updateField('ajBruteNotifiee', e.target.value)}
+                className="input pr-20"
+                placeholder={aff.eligible ? ajCalculee.aj.toFixed(2) : ''}
+              />
+            </InputSuffix>
+          </Field>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Prélèvement à la source">
+              <InputSuffix suffix="%">
+                <input type="number" min="0" max="100" step="0.1" value={data.tauxPrelevement} onChange={(e) => updateField('tauxPrelevement', e.target.value)} className="input pr-8" />
+              </InputSuffix>
+            </Field>
+            <Field label="Cotisations sur salaires" hint="Estimation du net (≈ 22 %).">
+              <InputSuffix suffix="%">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  value={data.tauxCotisationsSalaire}
+                  onChange={(e) => updateField('tauxCotisationsSalaire', e.target.value)}
+                  className="input pr-8"
+                />
+              </InputSuffix>
+            </Field>
+          </div>
+
+          <Field label="CSG sur l'ARE">
+            <Segmented
+              value={data.tauxCSG}
+              onChange={(v) => updateField('tauxCSG', v)}
+              options={[
+                { value: '6.2', label: 'Taux plein 6,2 %' },
+                { value: '3.8', label: 'Taux réduit 3,8 %' },
+              ]}
+            />
+          </Field>
         </Card>
 
         <Card
-          title={
-            <>
-              <Calculator className="w-5 h-5 mr-2 text-green-600" />
-              AJ calculée ({data.annexe === 'A8' ? 'annexe 8' : 'annexe 10'})
-            </>
-          }
-        >
-          <div className="text-xs text-gray-500 mb-2">
-            PRA du {formatDateFR(aff.periode.debut)} au {formatDateFR(aff.periode.fin)} — NHT {nb(aff.nht, 1)} h, SR {eur(aff.sr)}
-          </div>
-          {aff.eligible ? (
-            <table className="w-full text-sm">
-              <tbody>
-                <tr>
-                  <td className="py-1 text-gray-600">Partie A (salaires)</td>
-                  <td className="py-1 text-right">{eur(ajCalculee.A)}</td>
-                </tr>
-                <tr>
-                  <td className="py-1 text-gray-600">Partie B (heures)</td>
-                  <td className="py-1 text-right">{eur(ajCalculee.B)}</td>
-                </tr>
-                <tr>
-                  <td className="py-1 text-gray-600">Partie C (fixe, {eur(AJ_MIN)} × {data.annexe === 'A8' ? '0,40' : '0,70'})</td>
-                  <td className="py-1 text-right">{eur(ajCalculee.C)}</td>
-                </tr>
-                <tr className="border-t">
-                  <td className="py-1 text-gray-600">A + B + C</td>
-                  <td className="py-1 text-right">{eur(ajCalculee.brutCalcule)}</td>
-                </tr>
-                <tr className="border-t font-bold">
-                  <td className="py-2">AJ brute retenue</td>
-                  <td className="py-2 text-right text-blue-700 text-lg">{eur(ajCalculee.aj)}</td>
-                </tr>
-                <tr>
-                  <td className="py-1 text-gray-600">AJ nette estimée (avant impôt)</td>
-                  <td className="py-1 text-right">{eur(sim.sourceAJ === 'calculee' ? sim.retenues.net : ajCalculee.aj * sim.ratioNetAJ)}</td>
-                </tr>
-              </tbody>
-            </table>
-          ) : (
-            <Notice tone="error">
-              Seuil de 507 h non atteint dans la période de référence ({nb(aff.nht, 1)} h, il manque {nb(aff.heuresManquantes, 1)} h).
-            </Notice>
-          )}
-          <p className="text-xs text-gray-500 mt-2">
-            Plancher {eur(PLANCHER[data.annexe])}, plafond {eur(AJ_MAX)}.{' '}
-            {ajCalculee.plancherApplique && aff.eligible && <span className="text-amber-700">Plancher appliqué.</span>}
-            {ajCalculee.plafondApplique && aff.eligible && <span className="text-amber-700">Plafond appliqué.</span>}
-          </p>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <Card
-          title={
-            <>
-              <CheckCircle className="w-5 h-5 mr-2 text-green-600" />
-              Droit notifié par France Travail (facultatif)
-            </>
-          }
-        >
-          <label className="block text-sm font-medium mb-1">AJ brute figurant sur votre notification</label>
-          <div className="flex items-center mb-1">
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={data.ajBruteNotifiee}
-              onChange={(e) => updateField('ajBruteNotifiee', e.target.value)}
-              className={`w-32 mr-2 ${input}`}
-              placeholder={aff.eligible ? ajCalculee.aj.toFixed(2) : ''}
+          title="Franchises"
+          icon={<Scissors className="h-4 w-4" />}
+          action={
+            <Segmented
+              value={data.franchisesAuto}
+              onChange={(v) => updateField('franchisesAuto', v)}
+              options={[
+                { value: true, label: 'Calculées' },
+                { value: false, label: 'Notification' },
+              ]}
             />
-            <span>€ / jour</span>
-          </div>
-          <p className="text-xs text-gray-500 mb-4">
-            Si renseignée, cette AJ remplace l'AJ calculée dans le suivi mensuel. Utile pour un droit déjà ouvert.
-            {sim.sourceAJ === 'notifiee' && (
-              <span className="block text-blue-700 mt-1">
-                AJ utilisée : {eur(sim.ajBrute)} (notifiée) — l'AJ calculée sur vos contrats serait {eur(ajCalculee.aj)}.
-              </span>
-            )}
-          </p>
-
-          <label className="block text-sm font-medium mb-1">Taux de prélèvement à la source</label>
-          <div className="flex items-center mb-4">
-            <input
-              type="number"
-              min="0"
-              max="100"
-              step="0.1"
-              value={data.tauxPrelevement}
-              onChange={(e) => updateField('tauxPrelevement', e.target.value)}
-              className={`w-24 mr-2 ${input}`}
-            />
-            <span>%</span>
-          </div>
-
-          <label className="block text-sm font-medium mb-1">CSG sur l'ARE</label>
-          <select value={data.tauxCSG} onChange={(e) => updateField('tauxCSG', e.target.value === '3.8' ? '3.8' : '6.2')} className={`w-full mb-4 ${input}`}>
-            <option value="6.2">Taux plein (6,2 %)</option>
-            <option value="3.8">Taux réduit (3,8 %)</option>
-          </select>
-
-          <label className="block text-sm font-medium mb-1">Cotisations salariales sur les salaires (estimation)</label>
-          <div className="flex items-center">
-            <input
-              type="number"
-              min="0"
-              max="100"
-              step="0.5"
-              value={data.tauxCotisationsSalaire}
-              onChange={(e) => updateField('tauxCotisationsSalaire', e.target.value)}
-              className={`w-24 mr-2 ${input}`}
-            />
-            <span>% du brut</span>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">Sert uniquement à estimer vos salaires nets (≈ 22 % technicien, ≈ 20 % artiste avec abattement).</p>
-        </Card>
-
-        <Card
-          title={
-            <>
-              <Scissors className="w-5 h-5 mr-2 text-orange-600" />
-              Franchises
-            </>
           }
+          bodyClassName="p-5"
         >
-          <div className="flex items-center mb-3">
-            <span className="mr-3 text-sm font-medium">Calcul</span>
-            <button
-              type="button"
-              className={`px-3 py-1 rounded-l ${data.franchisesAuto ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-              onClick={() => updateField('franchisesAuto', true)}
-            >
-              Automatique
-            </button>
-            <button
-              type="button"
-              className={`px-3 py-1 rounded-r ${!data.franchisesAuto ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-              onClick={() => updateField('franchisesAuto', false)}
-            >
-              Notification
-            </button>
-          </div>
-
           {data.franchisesAuto ? (
-            <table className="w-full text-sm">
-              <tbody>
-                <tr>
-                  <td className="py-1 text-gray-600">Franchise congés payés</td>
-                  <td className="py-1 text-right">
-                    <b>{sim.franchiseCPAuto.total} j</b> — {sim.franchiseCPAuto.forfaitMensuel} j / mois
-                  </td>
-                </tr>
-                <tr>
-                  <td className="py-1 text-xs text-gray-500" colSpan={2}>
-                    ⌊{nb(aff.joursTravail, 1)} jours travaillés × 2,5 / 24⌋, plafonnée à 30 jours ; 2 j/mois jusqu'à 24 j, 3 j/mois au-delà.
-                  </td>
-                </tr>
-                <tr>
-                  <td className="py-1 text-gray-600">Franchise salaires</td>
-                  <td className="py-1 text-right">
-                    <b>{sim.franchiseSalAuto.total} j</b>
-                    {sim.franchiseSalAuto.total > 0 && <> — {repartitionFranchiseSalaires(sim.franchiseSalAuto).join(' + ')} j</>}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="py-1 text-xs text-gray-500" colSpan={2}>
-                    ⌊(SR / SMIC mensuel) × (SJM / (3 × SMIC journalier))⌋ − 27, étalée sur 8 mois. SJM {eur(sim.sjm)}, SMIC au{' '}
-                    {formatDateFR(aff.periode.fin)} : {eur(sim.smic.horaire)}/h.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <dl className="space-y-4 text-sm">
+              <div>
+                <div className="flex items-center justify-between">
+                  <dt className="font-medium text-slate-700">Congés payés</dt>
+                  <dd>
+                    <Badge tone="amber">
+                      {sim.franchiseCPAuto.total} j · {sim.franchiseCPAuto.forfaitMensuel} j/mois
+                    </Badge>
+                  </dd>
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  ⌊{nb(aff.joursTravail, 1)} jours travaillés × 2,5 / 24⌋, 30 j max ; 2 j/mois jusqu'à 24 j, 3 j au-delà.
+                </p>
+              </div>
+              <div>
+                <div className="flex items-center justify-between">
+                  <dt className="font-medium text-slate-700">Salaires</dt>
+                  <dd>
+                    <Badge tone={sim.franchiseSalAuto.total > 0 ? 'amber' : 'neutral'}>
+                      {sim.franchiseSalAuto.total} j{sim.franchiseSalAuto.total > 0 && ` · ${repartitionFranchiseSalaires(sim.franchiseSalAuto).join(' + ')}`}
+                    </Badge>
+                  </dd>
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  ⌊(salaires / SMIC mensuel) × (SJM / 3 SMIC journaliers)⌋ − 27, sur 8 mois. SJM {eur(sim.sjm)}, SMIC {eur(sim.smic.horaire)}/h au{' '}
+                  {formatDateFR(aff.periode.fin)}.
+                </p>
+              </div>
+            </dl>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <label className="text-sm">
-                Franchise CP (total)
-                <input type="number" min="0" value={data.franchiseConges} onChange={(e) => updateField('franchiseConges', e.target.value)} className={`w-full ${input}`} />
-              </label>
-              <label className="text-sm">
-                jours / mois
-                <input type="number" min="0" value={data.joursConges} onChange={(e) => updateField('joursConges', e.target.value)} className={`w-full ${input}`} placeholder="2 ou 3" />
-              </label>
-              <label className="text-sm">
-                Franchise salaires (total)
-                <input type="number" min="0" value={data.franchiseSalaires} onChange={(e) => updateField('franchiseSalaires', e.target.value)} className={`w-full ${input}`} />
-              </label>
-              <label className="text-sm">
-                jours / mois
-                <input type="number" min="0" value={data.joursSalaires} onChange={(e) => updateField('joursSalaires', e.target.value)} className={`w-full ${input}`} placeholder="total / 8" />
-              </label>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Franchise CP (total)">
+                <InputSuffix suffix="j">
+                  <input type="number" min="0" value={data.franchiseConges} onChange={(e) => updateField('franchiseConges', e.target.value)} className="input" />
+                </InputSuffix>
+              </Field>
+              <Field label="par mois">
+                <InputSuffix suffix="j">
+                  <input type="number" min="0" value={data.joursConges} onChange={(e) => updateField('joursConges', e.target.value)} className="input" placeholder="2 ou 3" />
+                </InputSuffix>
+              </Field>
+              <Field label="Franchise salaires (total)">
+                <InputSuffix suffix="j">
+                  <input type="number" min="0" value={data.franchiseSalaires} onChange={(e) => updateField('franchiseSalaires', e.target.value)} className="input" />
+                </InputSuffix>
+              </Field>
+              <Field label="par mois">
+                <InputSuffix suffix="j">
+                  <input type="number" min="0" value={data.joursSalaires} onChange={(e) => updateField('joursSalaires', e.target.value)} className="input" placeholder="total / 8" />
+                </InputSuffix>
+              </Field>
             </div>
           )}
         </Card>
-      </div>
 
-      <Notice icon={<Info className="w-5 h-5 text-blue-600" />}>
-        <p className="font-semibold mb-1">Rappels</p>
-        <ul className="list-disc list-inside space-y-1">
-          <li>
-            AJ brute = A + B + C avec AJ minimale {eur(AJ_MIN)}. Plancher {eur(PLANCHER.A8)} (annexe 8) / {eur(PLANCHER.A10)} (annexe 10), plafond {eur(AJ_MAX)}.
-          </li>
-          <li>AJ nette : aucune retenue jusqu'à {eur(AJ_MIN)} ; retraite complémentaire 0,93 % du SJM au-delà ; CSG + CRDS au-delà de 60 €.</li>
-          <li>Les franchises ne se consomment que sur des jours indemnisables, après le délai d'attente ; le forfait non appliqué est reporté.</li>
-          <li>L'indemnisation court jusqu'à la date anniversaire (début du droit + 12 mois) : {formatDateFR(sim.dateAnniversaire)}.</li>
-        </ul>
-      </Notice>
+        <Card title="De l'AJ brute à ce qui est versé" icon={<Receipt className="h-4 w-4" />}>
+          {sim.ajBrute > 0 ? (
+            <table className="num w-full text-sm">
+              <tbody className="divide-y divide-slate-100">
+                <tr>
+                  <td className="py-2 text-slate-600">AJ brute {sim.sourceAJ === 'notifiee' ? '(notifiée)' : '(calculée)'}</td>
+                  <td className="py-2 text-right font-medium">{eur(sim.ajBrute)}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 text-slate-500">− retraite complémentaire (0,93 % du SJM)</td>
+                  <td className="py-2 text-right text-rose-600">{sim.retenues.retraiteComplementaire > 0 ? `− ${eur(sim.retenues.retraiteComplementaire)}` : '—'}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 text-slate-500">− CSG / CRDS {sim.ajBrute <= 60 && '(pas en dessous de 60 €)'}</td>
+                  <td className="py-2 text-right text-rose-600">{sim.retenues.csgCrds > 0 ? `− ${eur(sim.retenues.csgCrds)}` : '—'}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 font-medium text-slate-700">AJ nette</td>
+                  <td className="py-2 text-right font-medium">{eur(sim.retenues.net)}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 text-slate-500">− impôt à la source ({nb(parseFloat(data.tauxPrelevement) || 0, 2)} %)</td>
+                  <td className="py-2 text-right text-rose-600">− {eur(sim.retenues.net * ((parseFloat(data.tauxPrelevement) || 0) / 100))}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 font-semibold text-slate-900">Versé par jour indemnisé</td>
+                  <td className="py-2 text-right text-lg font-semibold text-emerald-600">
+                    {eur(sim.retenues.net * (1 - (parseFloat(data.tauxPrelevement) || 0) / 100))}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          ) : (
+            <p className="text-sm text-slate-500">Aucune AJ : seuil des 507 h non atteint et pas d'AJ notifiée.</p>
+          )}
+          <p className="mt-3 text-xs text-slate-400">Aucune retenue jusqu'à {eur(AJ_MIN)} brut ; CSG et CRDS au-delà de 60 €.</p>
+        </Card>
+      </div>
     </div>
   );
 };

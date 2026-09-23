@@ -9,6 +9,7 @@ import {
   franchiseSalaires,
   suiviMensuel,
   projectionEligibilite,
+  paliers,
   parseDate,
   toISODate,
   addMonths,
@@ -21,6 +22,7 @@ import {
   type FranchiseSalaires,
   type ResultatSuivi,
   type Projection,
+  type Paliers,
 } from './calculs';
 
 export interface Simulation {
@@ -46,6 +48,9 @@ export interface Simulation {
   dateFinDroit: string;
   suivi: ResultatSuivi;
   projection: Projection;
+  paliers: Paliers;
+  /** Taux horaire brut moyen des contrats retenus (hors enseignement). */
+  tauxHoraireMoyen: number;
 }
 
 const toNum = (s: string, fallback = 0): number => {
@@ -54,7 +59,7 @@ const toNum = (s: string, fallback = 0): number => {
 };
 
 export function simulation(data: IntermittenceData, aujourdHui = new Date()): Simulation {
-  const aff = affiliation(data.contrats, data.annexe, data.dateFinPRA || undefined);
+  const aff = affiliation(data.contrats, data.annexe, data.dateFinPRA || undefined, { plus50ans: data.plus50ans });
   const ajCalculee = calculAJ(data.annexe, aff.sr, aff.nht);
   const sjmValeur = sjm(data.annexe, aff.sr, aff.nht);
   const smic = smicAt(aff.periode.fin);
@@ -67,7 +72,8 @@ export function simulation(data: IntermittenceData, aujourdHui = new Date()): Si
   const ratioNetSalaire = 1 - Math.min(100, Math.max(0, toNum(data.tauxCotisationsSalaire, 22))) / 100;
 
   const franchiseCPAuto = franchiseCP(aff.joursTravail);
-  const franchiseSalAuto = franchiseSalaires(aff.sr, sjmValeur, smic, 12);
+  // « salaires de la PRA » = toutes rémunérations, enseignement compris ; le SJM reste sur le SR
+  const franchiseSalAuto = franchiseSalaires(aff.sr + aff.brutEnseignement, sjmValeur, smic, 12);
   let fcp = franchiseCPAuto;
   let fsal = franchiseSalAuto;
   if (!data.franchisesAuto) {
@@ -106,6 +112,8 @@ export function simulation(data: IntermittenceData, aujourdHui = new Date()): Si
   const projection = projectionEligibilite(data.contrats, aff.heuresManquantes, aujourdHui);
 
   return {
+    paliers: paliers(data.annexe, aff.sr, aff.nht),
+    tauxHoraireMoyen: aff.heuresBrutes > 0 ? aff.sr / aff.heuresBrutes : 0,
     affiliation: aff,
     ajCalculee,
     sjm: sjmValeur,

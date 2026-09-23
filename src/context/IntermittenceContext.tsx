@@ -11,6 +11,8 @@ export interface IntermittenceData {
   /** Premier jour indemnisable (début du droit). */
   dateIndem: string;
   delaiAttente: boolean;
+  /** 50 ans ou plus à la fin du contrat retenu (120 h d'enseignement au lieu de 70). */
+  plus50ans: boolean;
   /** AJ brute figurant sur la notification France Travail (vide = AJ calculée). */
   ajBruteNotifiee: string;
   /** Franchises calculées automatiquement ou saisies (notification). */
@@ -54,6 +56,7 @@ export const defaultData: IntermittenceData = {
   dateFinPRA: '',
   dateIndem: '',
   delaiAttente: false,
+  plus50ans: false,
   ajBruteNotifiee: '',
   franchisesAuto: true,
   franchiseConges: '',
@@ -108,7 +111,7 @@ export function migrate(raw: unknown): IntermittenceData {
       date: str(c.date) || new Date().toISOString().slice(0, 10),
       dateFin: str(c.dateFin) || undefined,
       employeur: str(c.employeur),
-      type: c.type === 'Cachet' ? 'Cachet' : 'Heures',
+      type: c.type === 'Cachet' || c.type === 'Enseignement' ? c.type : 'Heures',
       nombre: Math.max(0, num(c.nombre, 0)),
       brut: Math.max(0, num(c.brut, 0)),
     }));
@@ -123,6 +126,7 @@ export function migrate(raw: unknown): IntermittenceData {
     dateFinPRA: str(r.dateFinPRA),
     dateIndem: str(r.dateIndem),
     delaiAttente: !!r.delaiAttente,
+    plus50ans: !!r.plus50ans,
     ajBruteNotifiee: str(r.ajBruteNotifiee ?? (v1 ? r.ajBrute : '')),
     franchisesAuto: typeof r.franchisesAuto === 'boolean' ? r.franchisesAuto : !franchisesSaisies,
     franchiseConges: str(r.franchiseConges),

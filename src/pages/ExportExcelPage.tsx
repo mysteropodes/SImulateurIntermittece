@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useIntermittence } from '../context/IntermittenceContext';
 import { useSimulation } from '../hooks/useSimulation';
 import { FileSpreadsheet, Download } from 'lucide-react';
-import ImportExportBar from '../components/ImportExportBar';
-import { Card, Notice } from '../components/ui';
+import { Card, Notice, PageHeader } from '../components/ui';
 import { heuresContrat, finContrat, formatDateFR } from '../lib/calculs';
 
 const ExportExcelPage: React.FC = () => {
@@ -67,7 +66,9 @@ const ExportExcelPage: React.FC = () => {
         ['SIMULATION INTERMITTENCE', ''],
         ['Annexe', data.annexe === 'A8' ? 'Ouvrier / Technicien (annexe 8)' : 'Artiste (annexe 10)'],
         ['Période de référence (PRA)', `${formatDateFR(a.periode.debut)} → ${formatDateFR(a.periode.fin)}`],
-        ['Heures retenues (NHT)', Math.round(a.nht * 100) / 100],
+        ['Heures pour les 507 h', Math.round(a.heuresAffiliation * 100) / 100],
+        ['Heures retenues pour l\'AJ (NHT)', Math.round(a.nht * 100) / 100],
+        ['Heures d\'enseignement (retenues / total)', `${Math.round(a.heuresEnseignementRetenues * 10) / 10} / ${Math.round(a.heuresEnseignement * 10) / 10}`],
         ['Salaire de référence (SR)', Math.round(a.sr * 100) / 100],
         ['Jours de travail', Math.round(a.joursTravail * 100) / 100],
         ['Salaire journalier moyen (SJM)', Math.round(sim.sjm * 100) / 100],
@@ -92,9 +93,9 @@ const ExportExcelPage: React.FC = () => {
         ['Franchise congés payés', `${sim.franchiseCP.total} j (${sim.franchiseCP.forfaitMensuel} j / mois)`],
         ['Franchise salaires', `${sim.franchiseSal.total} j (${sim.franchiseSal.mensuelle} j / mois)`],
       ];
-      rows.forEach(([k, v], i) => {
+      rows.forEach(([k, v]) => {
         const row = wsS.addRow([k, v]);
-        if ([0, 9, 21].includes(i)) row.font = bold;
+        if (['SIMULATION INTERMITTENCE', 'ALLOCATION JOURNALIÈRE', 'DROIT'].includes(k)) row.font = bold;
       });
 
       // 3. Suivi mensuel
@@ -108,6 +109,7 @@ const ExportExcelPage: React.FC = () => {
         { header: 'Net', width: 11 },
         { header: 'J. travail', width: 9 },
         { header: 'J. non indemn.', width: 13 },
+        { header: 'Marge (h)', width: 10 },
         { header: 'Délai', width: 7 },
         { header: 'Fr. CP', width: 7 },
         { header: 'Fr. Sal.', width: 8 },
@@ -127,6 +129,7 @@ const ExportExcelPage: React.FC = () => {
           Math.round(m.net * 100) / 100,
           Math.round(m.joursTravail * 100) / 100,
           m.seuilAtteint ? 'seuil' : m.joursNonIndemnisables,
+          m.seuilAtteint ? '' : Math.round(m.margeHeures * 10) / 10,
           m.delaiAttente,
           m.franchiseCP,
           m.franchiseSal,
@@ -147,6 +150,7 @@ const ExportExcelPage: React.FC = () => {
         Math.round(t.net * 100) / 100,
         Math.round(t.joursTravail * 100) / 100,
         '',
+        '',
         t.delaiAttente,
         t.franchiseCP,
         t.franchiseSal,
@@ -157,7 +161,7 @@ const ExportExcelPage: React.FC = () => {
         '',
       ]);
       total.font = bold;
-      [5, 6, 13, 14, 15].forEach((c) => (wsM.getColumn(c).numFmt = money));
+      [5, 6, 14, 15, 16].forEach((c) => (wsM.getColumn(c).numFmt = money));
       header(wsM);
 
       const buffer = await wb.xlsx.writeBuffer();
@@ -179,34 +183,20 @@ const ExportExcelPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Export Excel</h1>
-        <p className="text-gray-600">Trois feuilles : Contrats, Synthèse (PRA, AJ, franchises) et Suivi mensuel — mêmes calculs que l'application.</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader title="Export Excel" description="Un classeur de trois feuilles — Contrats, Synthèse, Suivi mensuel — avec les mêmes calculs que l'application." />
 
-      <ImportExportBar />
-
-      <Card
-        title={
-          <>
-            <FileSpreadsheet className="w-5 h-5 mr-2 text-green-600" />
-            Générer le classeur
-          </>
-        }
-        className="mb-6"
-      >
-        <button
-          onClick={generateExcel}
-          disabled={isGenerating}
-          className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-        >
-          <Download className="w-4 h-4 mr-2" />
+      <Card title="Générer le classeur" icon={<FileSpreadsheet className="h-4 w-4" />}>
+        <button onClick={generateExcel} disabled={isGenerating} className="btn-primary">
+          <Download className="h-4 w-4" />
           {isGenerating ? 'Génération…' : 'Télécharger Simulateur_Intermittence.xlsx'}
         </button>
+        <p className="mt-3 text-xs text-slate-500">
+          Le classeur contient des valeurs calculées : modifiez vos contrats dans l'application puis exportez à nouveau.
+        </p>
       </Card>
 
-      <Notice>Le classeur contient des valeurs calculées (pas de formules à recopier) : modifiez vos contrats dans l'application puis exportez à nouveau.</Notice>
+      <Notice>Pour sauvegarder vos données et les rouvrir plus tard, utilisez plutôt « Exporter » dans le menu (fichier JSON réimportable).</Notice>
     </div>
   );
 };

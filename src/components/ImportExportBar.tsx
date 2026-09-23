@@ -1,72 +1,45 @@
 import React, { useRef } from 'react';
 import { useIntermittence } from '../context/IntermittenceContext';
-import { Upload, Save, RotateCcw } from 'lucide-react';
+import { Upload, Download, RotateCcw } from 'lucide-react';
 
-const ImportExportBar: React.FC = () => {
+/** Actions sur les données (export / import JSON, réinitialisation), affichées dans la barre latérale. */
+const ImportExportBar: React.FC<{ compact?: boolean }> = ({ compact }) => {
   const { exportData, importData, resetData } = useIntermittence();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleImportClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
-      if (content) {
-        importData(content);
-      }
+      if (content) importData(content);
     };
     reader.readAsText(file);
-    
-    // Reset the input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const cls = compact
+    ? 'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-brand-100 hover:bg-white/10 hover:text-white'
+    : 'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-brand-100 hover:bg-white/10 hover:text-white';
+
   return (
-    <div className="flex items-center justify-end space-x-3 mb-4 border-b pb-3">
-      <button
-        onClick={exportData}
-        className="flex items-center px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition duration-200"
-      >
-        <Save className="w-4 h-4 mr-2" />
-        Exporter JSON
+    <div className={compact ? 'flex gap-1' : 'flex flex-col gap-0.5'}>
+      <button onClick={exportData} className={cls} title="Télécharger vos données (JSON)">
+        <Download className="h-4 w-4" />
+        <span className={compact ? 'hidden sm:inline' : ''}>Exporter</span>
       </button>
-      
-      <button
-        onClick={handleImportClick}
-        className="flex items-center px-3 py-2 bg-gray-100 text-gray-800 rounded hover:bg-gray-200 transition duration-200"
-      >
-        <Upload className="w-4 h-4 mr-2" />
-        Importer JSON
+      <button onClick={() => fileInputRef.current?.click()} className={cls} title="Charger un fichier JSON">
+        <Upload className="h-4 w-4" />
+        <span className={compact ? 'hidden sm:inline' : ''}>Importer</span>
       </button>
-      
-      <button
-        onClick={resetData}
-        className="flex items-center px-3 py-2 text-gray-500 rounded hover:bg-gray-100 transition duration-200"
-        title="Effacer toutes les données"
-      >
-        <RotateCcw className="w-4 h-4 mr-2" />
-        Réinitialiser
+      <button onClick={resetData} className={cls} title="Effacer toutes les données">
+        <RotateCcw className="h-4 w-4" />
+        <span className={compact ? 'hidden sm:inline' : ''}>Réinitialiser</span>
       </button>
-      
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".json"
-        onChange={handleFileChange}
-        style={{ display: 'none' }}
-      />
+      <input ref={fileInputRef} type="file" accept=".json,application/json" onChange={handleFileChange} className="hidden" />
     </div>
   );
 };
 
-export default ImportExportBar; 
+export default ImportExportBar;
