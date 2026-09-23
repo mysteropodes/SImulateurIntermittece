@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, ClipboardCopy, Check, ExternalLink, ListChec
 import { useIntermittence } from '../context/IntermittenceContext';
 import { useSimulation } from '../hooks/useSimulation';
 import { Card, Kpi, Badge, PageHeader, Notice, eur, nb } from '../components/ui';
+import ExamenAnniversaire from '../components/ExamenAnniversaire';
 import { recapMois, recapTexte } from '../lib/actualisation';
 import { TYPES } from '../lib/typesContrat';
 import { cleMois, formatDateFR } from '../lib/calculs';
@@ -57,6 +58,8 @@ const ActualisationPage: React.FC = () => {
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
+
+      <ExamenAnniversaire compact />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Kpi variant="dark" label="Heures à déclarer" value={`${nb(recap.heures, 2)} h`} sub={`${recap.lignes.length} employeur(s) / activité(s)`} />

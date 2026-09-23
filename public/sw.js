@@ -1,7 +1,7 @@
 // Service worker : l'application fonctionne hors connexion après une première visite.
 // Pages : réseau d'abord (dernière version), cache en secours.
 // Fichiers statiques (JS, CSS, icônes, polices) : cache d'abord.
-const CACHE = 'intermittence-v2';
+const CACHE = 'intermittence-v3';
 const BASE = self.registration.scope;
 
 self.addEventListener('install', (e) => {

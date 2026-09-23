@@ -1,5 +1,6 @@
 import React from 'react';
-import { CalendarX2 } from 'lucide-react';
+import { CalendarX2, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useIntermittence } from '../context/IntermittenceContext';
 import { useSimulation } from '../hooks/useSimulation';
 import { Card, Aide, eur, nb } from './ui';
@@ -24,7 +25,22 @@ const ExamenAnniversaire: React.FC<{ compact?: boolean }> = ({ compact }) => {
   const aj = (a: typeof affAvec | null) => (a && a.eligible ? calculAJ(data.annexe, a.sr, a.nht).aj : null);
 
   if (!ex.reporte) {
-    if (compact) return null;
+    if (compact)
+      return (
+        <div className="flex flex-col gap-3 rounded-4xl bg-lime-200 p-4 text-sm text-brand-900 sm:flex-row sm:items-center sm:p-5">
+          <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-brand-900/10">
+            <CalendarX2 className="h-4 w-4" />
+          </span>
+          <p className="flex-1 leading-relaxed">
+            <b>Date anniversaire le {formatDateFR(sim.dateAnniversaire)}.</b> Si un contrat spectacle est en cours ce jour-là, l'examen est reporté au premier jour
+            sans contrat et votre date anniversaire suivante recule. Avant d'accepter ou de dater un contrat autour de cette date, regardez le calcul.{' '}
+            <Aide terme="reportExamen" />
+          </p>
+          <Link to="/echeances" className="btn-primary flex-shrink-0 py-2">
+            Voir le calcul <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      );
     return (
       <Card title="Le jour de la date anniversaire" aide="reportExamen" icon={<CalendarX2 className="h-4 w-4" />}>
         <p className="text-sm leading-relaxed text-slate-600">

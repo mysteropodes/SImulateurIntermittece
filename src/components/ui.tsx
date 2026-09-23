@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { GLOSSAIRE, type TermeGlossaire } from '../lib/glossaire';
 
 type Tone = 'neutral' | 'brand' | 'green' | 'amber' | 'red' | 'blue' | 'lime';
@@ -27,28 +28,44 @@ const toneBg: Record<Tone, string> = {
 // Infobulle ⓘ : survol, focus clavier ou appui (mobile)
 // ---------------------------------------------------------------------------
 
+const LARGEUR_BULLE = 272;
+
 export const Aide: React.FC<{ terme?: TermeGlossaire; texte?: React.ReactNode; className?: string; dark?: boolean }> = ({ terme, texte, className = '', dark }) => {
   const [ouvert, setOuvert] = useState(false);
-  const [bord, setBord] = useState<'gauche' | 'droite' | null>(null);
+  const [pos, setPos] = useState<{ left: number; top: number; dessus: boolean } | null>(null);
   const ref = useRef<HTMLSpanElement>(null);
   const id = useId();
   const contenu = texte ?? (terme ? GLOSSAIRE[terme] : null);
 
+  // La bulle est rendue dans <body> en position fixe : elle n'est jamais coupée par un tableau défilant.
+  const placer = () => {
+    const r = ref.current?.getBoundingClientRect();
+    if (!r) return;
+    const vw = window.innerWidth;
+    const left = Math.min(Math.max(8, r.left + r.width / 2 - LARGEUR_BULLE / 2), vw - LARGEUR_BULLE - 8);
+    const dessus = r.top > 170;
+    setPos({ left, top: dessus ? r.top - 8 : r.bottom + 8, dessus });
+  };
+
   useEffect(() => {
     if (!ouvert) return;
-    const r = ref.current?.getBoundingClientRect();
-    if (r) setBord(r.left < 150 ? 'gauche' : window.innerWidth - r.right < 150 ? 'droite' : null);
+    placer();
     const fermer = (e: MouseEvent | TouchEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOuvert(false);
     };
     const echap = (e: KeyboardEvent) => e.key === 'Escape' && setOuvert(false);
+    const bouger = () => placer();
     document.addEventListener('mousedown', fermer);
     document.addEventListener('touchstart', fermer);
     document.addEventListener('keydown', echap);
+    window.addEventListener('scroll', bouger, true);
+    window.addEventListener('resize', bouger);
     return () => {
       document.removeEventListener('mousedown', fermer);
       document.removeEventListener('touchstart', fermer);
       document.removeEventListener('keydown', echap);
+      window.removeEventListener('scroll', bouger, true);
+      window.removeEventListener('resize', bouger);
     };
   }, [ouvert]);
 
@@ -66,23 +83,25 @@ export const Aide: React.FC<{ terme?: TermeGlossaire; texte?: React.ReactNode; c
         }}
         onFocus={() => setOuvert(true)}
         onBlur={() => setOuvert(false)}
-        className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold leading-none transition ${
+        className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold normal-case leading-none transition ${
           dark ? 'bg-white/15 text-white/80 hover:bg-white/25' : 'bg-slate-200/80 text-slate-500 hover:bg-brand-600 hover:text-white'
         }`}
       >
         i
       </button>
-      {ouvert && (
-        <span
-          role="tooltip"
-          id={id}
-          className={`absolute bottom-full z-50 mb-2 w-64 max-w-[80vw] rounded-2xl bg-brand-900 px-3.5 py-3 text-left text-xs font-normal normal-case leading-relaxed tracking-normal text-white shadow-xl ${
-            bord === 'gauche' ? 'left-0' : bord === 'droite' ? 'right-0' : 'left-1/2 -translate-x-1/2'
-          }`}
-        >
-          {contenu}
-        </span>
-      )}
+      {ouvert &&
+        pos &&
+        createPortal(
+          <span
+            role="tooltip"
+            id={id}
+            style={{ left: pos.left, top: pos.top, width: LARGEUR_BULLE, transform: pos.dessus ? 'translateY(-100%)' : undefined }}
+            className="pointer-events-none fixed z-[100] rounded-2xl bg-brand-900 px-3.5 py-3 text-left text-xs font-normal normal-case leading-relaxed tracking-normal text-white shadow-xl"
+          >
+            {contenu}
+          </span>,
+          document.body
+        )}
     </span>
   );
 };
