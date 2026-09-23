@@ -48,3 +48,18 @@ describe('migrate (import JSON)', () => {
     expect(() => migrate('x')).toThrow();
   });
 });
+
+describe('données d’exemple', () => {
+  it('sont marquées fictives et décalées pour rester actuelles', async () => {
+    const { exempleData } = await import('./IntermittenceContext');
+    const e = exempleData(new Date(2027, 2, 10)); // 6 mois après la référence de septembre 2026
+    expect(e.exemple).toBe(true);
+    expect(e.dateIndem).toBe('2026-09-15');
+    expect(e.contrats[0].date).toBe('2025-10-07');
+    expect(exempleData(new Date(2026, 8, 23)).dateIndem).toBe('2026-03-15');
+  });
+
+  it('un fichier importé n’est pas un exemple', () => {
+    expect(migrate({ contrats: [] }).exemple).toBe(false);
+  });
+});

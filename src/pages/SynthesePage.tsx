@@ -2,13 +2,69 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useIntermittence } from '../context/IntermittenceContext';
 import { useSimulation } from '../hooks/useSimulation';
-import { AlertCircle, ArrowRight, Calendar, Euro, Wallet } from 'lucide-react';
+import { AlertCircle, ArrowRight, Calendar, Euro, Wallet, SlidersHorizontal, List, Upload, FlaskConical } from 'lucide-react';
 import { Card, Kpi, Stat, Notice, Ring, Aide, PageHeader, eur, nb } from '../components/ui';
 import PaliersPanel from '../components/PaliersPanel';
 import ExamenAnniversaire from '../components/ExamenAnniversaire';
+import BandeauExemple from '../components/BandeauExemple';
 import { SEUIL_HEURES, formatDateFR, parseDate, cleMois } from '../lib/calculs';
 
+const Demarrer: React.FC = () => {
+  const { chargerExemple, importData } = useIntermittence();
+  const lire = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => ev.target?.result && importData(ev.target.result as string);
+    reader.readAsText(f);
+    e.target.value = '';
+  };
+  const etapes = [
+    { icon: <SlidersHorizontal className="h-5 w-5" />, titre: 'Votre situation', texte: 'Annexe, date de début du droit et AJ de votre notification, si vous en avez une.', to: '/mon-aj', bouton: 'Mon droit' },
+    { icon: <List className="h-5 w-5" />, titre: 'Vos contrats', texte: 'Heures, cachets, cours, arrêts : tout ce qui compte pour vos 507 h et votre ARE.', to: '/contrats', bouton: 'Ajouter mes contrats' },
+  ];
+  return (
+    <div className="space-y-6">
+      <PageHeader title="Bien démarrer" accent="en 2 étapes" description="Vos données restent dans ce navigateur. Pensez à les exporter de temps en temps pour les garder." />
+      <div className="grid gap-4 md:grid-cols-3">
+        {etapes.map((e, i) => (
+          <div key={e.to} className={`flex flex-col rounded-4xl p-6 ${i === 0 ? 'bg-brand-700 text-white' : 'bg-lime-300 text-brand-900'}`}>
+            <span className={`flex h-10 w-10 items-center justify-center rounded-full ${i === 0 ? 'bg-white/10 text-lime-300' : 'bg-brand-900/10'}`}>{e.icon}</span>
+            <p className={`mt-4 text-sm ${i === 0 ? 'text-brand-200' : 'text-brand-800/70'}`}>Étape {i + 1}</p>
+            <p className="text-xl font-semibold">{e.titre}</p>
+            <p className={`mt-2 flex-1 text-sm leading-relaxed ${i === 0 ? 'text-brand-100' : 'text-brand-900/80'}`}>{e.texte}</p>
+            <Link to={e.to} className={`mt-5 self-start ${i === 0 ? 'btn-lime' : 'btn-primary'}`}>
+              {e.bouton} <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        ))}
+        <div className="flex flex-col rounded-4xl bg-white p-6">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+            <Upload className="h-5 w-5" />
+          </span>
+          <p className="mt-4 text-sm text-slate-500">Déjà un fichier ?</p>
+          <p className="text-xl font-semibold text-slate-900">Importer mes données</p>
+          <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">Le fichier JSON exporté depuis ce simulateur, sur cet appareil ou un autre.</p>
+          <label className="btn-outline mt-5 cursor-pointer self-start">
+            <Upload className="h-4 w-4" /> Choisir le fichier
+            <input type="file" accept=".json,application/json" onChange={lire} className="hidden" />
+          </label>
+        </div>
+      </div>
+      <button type="button" onClick={chargerExemple} className="btn-ghost">
+        <FlaskConical className="h-4 w-4" /> Revoir l'exemple fictif
+      </button>
+    </div>
+  );
+};
+
 const SynthesePage: React.FC = () => {
+  const { data } = useIntermittence();
+  if (data.contrats.length === 0 && !data.exemple) return <Demarrer />;
+  return <Tableau />;
+};
+
+const Tableau: React.FC = () => {
   const { data } = useIntermittence();
   const sim = useSimulation();
   const { affiliation: aff, ajCalculee } = sim;
@@ -34,6 +90,8 @@ const SynthesePage: React.FC = () => {
           </Link>
         }
       />
+
+      <BandeauExemple />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi

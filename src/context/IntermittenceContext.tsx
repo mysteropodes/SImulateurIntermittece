@@ -47,6 +47,8 @@ export interface IntermittenceData {
   contrats: Contrat[];
   /** Droits précédents, pour suivre la progression d'une date anniversaire à l'autre. */
   historique: DroitPasse[];
+  /** Données d'exemple fictives chargées au premier lancement. */
+  exemple?: boolean;
   /** Profil pour l'onglet « Mes droits » (perte de l'intermittence, congés). */
   profil: {
     ancienneteAns: number;
@@ -65,6 +67,10 @@ interface IntermittenceContextProps {
   addContrat: () => void;
   removeContrat: (id: string) => void;
   resetData: () => void;
+  /** Vide l'exemple sans confirmation (bandeau d'accueil). */
+  viderExemple: () => void;
+  /** Recharge les données d'exemple fictives. */
+  chargerExemple: () => void;
   addDroit: (d?: Partial<DroitPasse>) => void;
   updateDroit: <K extends keyof DroitPasse>(id: string, field: K, value: DroitPasse[K]) => void;
   removeDroit: (id: string) => void;
@@ -102,21 +108,62 @@ export const defaultData: IntermittenceData = {
   profil: { ancienneteAns: 0, cinqAnsSur10: false, afdDeja: 0, congeDebut: '', congeType: 'maternite-1-2' },
 };
 
-/** Exemple de départ pour découvrir l'outil. */
-export const exempleData = (): IntermittenceData => ({
-  ...defaultData,
-  dateFinContrat: '2025-06-30',
-  dateIndem: '2025-07-01',
-  delaiAttente: true,
-  contrats: [
-    { id: newId(), date: '2024-09-02', dateFin: '2024-09-27', employeur: 'Théâtre ABC', type: 'Heures', nombre: 140, brut: 3200 },
-    { id: newId(), date: '2024-11-04', dateFin: '2024-11-29', employeur: 'Production XYZ', type: 'Heures', nombre: 151, brut: 3500 },
-    { id: newId(), date: '2025-02-10', employeur: 'Festival 123', type: 'Cachet', nombre: 6, brut: 1800 },
-    { id: newId(), date: '2025-04-01', dateFin: '2025-04-30', employeur: 'Compagnie DEF', type: 'Heures', nombre: 120, brut: 2800 },
-    { id: newId(), date: '2025-06-02', dateFin: '2025-06-30', employeur: 'Théâtre ABC', type: 'Heures', nombre: 100, brut: 2400 },
-    { id: newId(), date: '2025-09-15', dateFin: '2025-09-19', employeur: 'Production XYZ', type: 'Heures', nombre: 35, brut: 900 },
-  ],
-});
+/** Date à laquelle le jeu d'exemple a été écrit : on le décale d'autant de mois pour qu'il reste actuel. */
+const REFERENCE_EXEMPLE = new Date(2026, 8, 1);
+
+function decaler(iso: string, mois: number): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  const r = new Date(y, m - 1 + mois, 1);
+  const dernier = new Date(r.getFullYear(), r.getMonth() + 1, 0).getDate();
+  r.setDate(Math.min(d, dernier));
+  return `${r.getFullYear()}-${String(r.getMonth() + 1).padStart(2, '0')}-${String(r.getDate()).padStart(2, '0')}`;
+}
+
+/** Exemple fictif pour découvrir l'outil (technicienne en annexe 8, employeurs inventés). */
+export const exempleData = (aujourdHui = new Date()): IntermittenceData => {
+  const k = (aujourdHui.getFullYear() - REFERENCE_EXEMPLE.getFullYear()) * 12 + aujourdHui.getMonth() - REFERENCE_EXEMPLE.getMonth();
+  const d = (iso: string) => decaler(iso, k);
+  const c = (date: string, dateFin: string, employeur: string, type: Contrat['type'], nombre: number, brut: number): Contrat => ({
+    id: newId(),
+    date: d(date),
+    dateFin: d(dateFin),
+    employeur,
+    type,
+    nombre,
+    brut,
+  });
+  return {
+    ...defaultData,
+    exemple: true,
+    dateFinContrat: d('2026-03-13'),
+    dateIndem: d('2026-03-15'),
+    delaiAttente: true,
+    ajBruteNotifiee: '71.40',
+    tauxPrelevement: '4.5',
+    profil: { ...defaultData.profil, ancienneteAns: 6, cinqAnsSur10: true },
+    historique: [
+      { id: newId(), dateDebut: d('2024-03-02'), ajBrute: 62.8, heures: 612, salaires: 16900 },
+      { id: newId(), dateDebut: d('2025-03-08'), ajBrute: 67.15, heures: 684, salaires: 19800 },
+    ],
+    contrats: [
+      c('2025-04-07', '2025-04-18', 'Théâtre des Lucioles', 'Heures', 70, 2240),
+      c('2025-05-12', '2025-05-16', 'Festival Ondes Claires', 'Heures', 40, 1360),
+      c('2025-06-02', '2025-06-27', 'Compagnie Nuit Blanche', 'Heures', 120, 3720),
+      c('2025-07-10', '2025-07-20', 'Festival Ondes Claires', 'Heures', 88, 2900),
+      c('2025-09-15', '2025-09-26', 'Studio Pixel Rouge', 'Heures', 72, 2450),
+      c('2025-10-06', '2025-10-10', 'École Arts du Son', 'Enseignement', 21, 790),
+      c('2025-11-03', '2025-11-21', 'Théâtre des Lucioles', 'Heures', 105, 3390),
+      c('2025-12-08', '2025-12-12', 'Opéra Miniature', 'Cachet', 5, 1500),
+      c('2026-01-19', '2026-01-30', 'Studio Pixel Rouge', 'Heures', 64, 2210),
+      c('2026-02-16', '2026-03-13', 'Compagnie Nuit Blanche', 'Heures', 110, 3530),
+      c('2026-04-13', '2026-04-17', 'Festival Ondes Claires', 'Heures', 38, 1290),
+      c('2026-05-25', '2026-06-05', 'Théâtre des Lucioles', 'Heures', 76, 2530),
+      c('2026-06-15', '2026-06-19', 'Agence Clair-Obscur', 'RegimeGeneral', 28, 520),
+      c('2026-07-06', '2026-07-24', 'Festival Ondes Claires', 'Heures', 96, 3180),
+      c('2026-09-07', '2026-09-11', 'Opéra Miniature', 'Cachet', 4, 1240),
+    ],
+  };
+};
 
 const num = (v: unknown, fallback: number): number => {
   const n = typeof v === 'number' ? v : parseFloat(String(v ?? ''));
@@ -184,6 +231,7 @@ export function migrate(raw: unknown): IntermittenceData {
     tauxCotisationsSalaire: str(r.tauxCotisationsSalaire, '22') || '22',
     contrats,
     historique,
+    exemple: r.exemple === true,
     profil: (() => {
       const p = (r.profil && typeof r.profil === 'object' ? r.profil : {}) as Record<string, unknown>;
       return {
@@ -265,6 +313,9 @@ export const IntermittenceProvider: React.FC<{ children: ReactNode }> = ({ child
     setData((prev) => ({ ...prev, historique: prev.historique.filter((h) => h.id !== id) }));
   };
 
+  const viderExemple = () => setData({ ...defaultData, contrats: [] });
+  const chargerExemple = () => setData(exempleData());
+
   const resetData = () => {
     if (confirm('Effacer toutes les données saisies ?')) setData({ ...defaultData, contrats: [] });
   };
@@ -289,7 +340,7 @@ export const IntermittenceProvider: React.FC<{ children: ReactNode }> = ({ child
     }
   };
 
-  const value = { data, setData, updateField, updateContrat, addContrat, removeContrat, resetData, addDroit, updateDroit, removeDroit, exportData, importData };
+  const value = { data, setData, updateField, updateContrat, addContrat, removeContrat, resetData, viderExemple, chargerExemple, addDroit, updateDroit, removeDroit, exportData, importData };
 
   return <IntermittenceContext.Provider value={value}>{children}</IntermittenceContext.Provider>;
 };
