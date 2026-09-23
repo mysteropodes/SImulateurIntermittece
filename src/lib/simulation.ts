@@ -134,3 +134,101 @@ export function simulation(data: IntermittenceData, aujourdHui = new Date()): Si
     projection,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Historique des droits (progression d'une date anniversaire à l'autre)
+// ---------------------------------------------------------------------------
+
+export type StatutDroit = 'passe' | 'en-cours' | 'projection';
+
+export interface LigneHistorique {
+  id: string;
+  statut: StatutDroit;
+  dateDebut: string;
+  dateAnniversaire: string;
+  /** AJ brute (notifiée pour les droits passés / en cours, recalculée pour la projection). */
+  ajBrute: number | null;
+  /** Heures retenues pour l'AJ et salaire de référence, s'ils sont connus. */
+  heures: number | null;
+  salaires: number | null;
+  /** D'où viennent heures et salaires : saisis, ou déduits des contrats (éventuellement partiels). */
+  source: 'saisie' | 'contrats' | 'contrats-partiels' | null;
+  /** AJ selon la formule actuelle, quand heures et salaires sont connus. */
+  ajFormule: ResultatAJ | null;
+  /** Écart d'AJ avec le droit précédent. */
+  variation: number | null;
+}
+
+/** Heures et salaires de la PRA qui précède un droit, déduits des contrats saisis. */
+function depuisContrats(data: IntermittenceData, dateDebut: string) {
+  const finPRA = toISODate(addDays(parseDate(dateDebut), -1));
+  const aff = affiliation(data.contrats, data.annexe, finPRA, { plus50ans: data.plus50ans });
+  if (aff.heuresAffiliation <= 0) return null;
+  return { heures: aff.nht, salaires: aff.sr, complet: aff.eligible };
+}
+
+export function historiqueDroits(data: IntermittenceData, sim: Simulation): LigneHistorique[] {
+  const lignes: Omit<LigneHistorique, 'variation'>[] = [];
+  const anniversaire = (d: string) => toISODate(addMonths(parseDate(d), 12));
+
+  for (const h of data.historique) {
+    let heures: number | null = h.heures ?? null;
+    let salaires: number | null = h.salaires ?? null;
+    let source: LigneHistorique['source'] = heures != null && salaires != null ? 'saisie' : null;
+    if (source == null) {
+      const c = depuisContrats(data, h.dateDebut);
+      if (c) {
+        heures = heures ?? c.heures;
+        salaires = salaires ?? c.salaires;
+        source = c.complet ? 'contrats' : 'contrats-partiels';
+      }
+    }
+    lignes.push({
+      id: h.id,
+      statut: 'passe',
+      dateDebut: h.dateDebut,
+      dateAnniversaire: anniversaire(h.dateDebut),
+      ajBrute: h.ajBrute > 0 ? h.ajBrute : null,
+      heures,
+      salaires,
+      source,
+      ajFormule: heures != null && salaires != null && heures > 0 ? calculAJ(data.annexe, salaires, heures) : null,
+    });
+  }
+
+  // droit en cours
+  const c = depuisContrats(data, sim.dateIndem);
+  lignes.push({
+    id: 'en-cours',
+    statut: 'en-cours',
+    dateDebut: sim.dateIndem,
+    dateAnniversaire: sim.dateAnniversaire,
+    ajBrute: sim.ajBrute > 0 ? sim.ajBrute : null,
+    heures: c?.heures ?? null,
+    salaires: c?.salaires ?? null,
+    source: c ? (c.complet ? 'contrats' : 'contrats-partiels') : null,
+    ajFormule: c && c.heures > 0 ? calculAJ(data.annexe, c.salaires, c.heures) : null,
+  });
+
+  // prochaine date anniversaire : AJ recalculée sur la période de référence actuelle
+  const aff = sim.affiliation;
+  lignes.push({
+    id: 'projection',
+    statut: 'projection',
+    dateDebut: sim.dateAnniversaire,
+    dateAnniversaire: anniversaire(sim.dateAnniversaire),
+    ajBrute: aff.eligible ? sim.ajCalculee.aj : null,
+    heures: aff.nht,
+    salaires: aff.sr,
+    source: 'contrats',
+    ajFormule: aff.eligible ? sim.ajCalculee : null,
+  });
+
+  lignes.sort((a, b) => a.dateDebut.localeCompare(b.dateDebut) || (a.statut === 'projection' ? 1 : b.statut === 'projection' ? -1 : 0));
+  let precedente: number | null = null;
+  return lignes.map((l) => {
+    const variation = l.ajBrute != null && precedente != null ? l.ajBrute - precedente : null;
+    if (l.ajBrute != null) precedente = l.ajBrute;
+    return { ...l, variation };
+  });
+}

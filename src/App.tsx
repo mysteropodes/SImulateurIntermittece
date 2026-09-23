@@ -8,6 +8,7 @@ import ContratsPage from './pages/ContratsPage';
 import SuiviMensuelPage from './pages/SuiviMensuelPage';
 import TableauDeBordPage from './pages/TableauDeBordPage';
 import ExportExcelPage from './pages/ExportExcelPage';
+import HistoriquePage from './pages/HistoriquePage';
 
 import Navigation from './components/Navigation';
 import ImportExportBar from './components/ImportExportBar';
@@ -77,6 +78,7 @@ function Shell() {
             <Route path="/contrats" element={<ContratsPage />} />
             <Route path="/suivi-mensuel" element={<SuiviMensuelPage />} />
             <Route path="/tableau-de-bord" element={<TableauDeBordPage />} />
+            <Route path="/historique" element={<HistoriquePage />} />
             <Route path="/export" element={<ExportExcelPage />} />
           </Routes>
           <footer className="mt-10 border-t border-slate-200 pt-4 text-xs text-slate-400">
