@@ -3,6 +3,7 @@ import { CalendarPlus, Building2, Landmark, Flag } from 'lucide-react';
 import { useIntermittence } from '../context/IntermittenceContext';
 import { useSimulation } from '../hooks/useSimulation';
 import { Card, Badge, PageHeader, Notice } from '../components/ui';
+import ExamenAnniversaire from '../components/ExamenAnniversaire';
 import { echeances, versICS, type TypeEcheance } from '../lib/echeances';
 import { diagnosticAnniversaire } from '../lib/droits';
 import { formatDateFR, parseDate, toISODate } from '../lib/calculs';
@@ -47,6 +48,8 @@ const EcheancesPage: React.FC = () => {
           </button>
         }
       />
+
+      <ExamenAnniversaire />
 
       <Card bodyClassName="p-2 sm:p-3">
         <ol className="relative">

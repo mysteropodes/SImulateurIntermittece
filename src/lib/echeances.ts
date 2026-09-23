@@ -54,7 +54,7 @@ export function echeances(p: ParamsEcheances): Echeance[] {
     id: 'anniversaire',
     date: p.dateAnniversaire,
     titre: 'Date anniversaire',
-    detail: 'Fin du droit en cours et réexamen de vos 507 h.',
+    detail: 'Fin du droit en cours. Évitez d’être sous contrat spectacle ce jour-là : l’examen serait reporté au premier jour sans contrat et votre prochaine date anniversaire reculerait (voir la page Échéances).',
     type: 'droit',
   });
   if (p.rattrapagePossible) {

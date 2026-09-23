@@ -21,7 +21,7 @@ export const TYPES: Record<
   },
   RegimeGeneral: {
     label: 'Salarié hors spectacle',
-    court: 'Hors spect.',
+    court: 'Hors spectacle',
     tone: 'blue',
     unite: 'h',
     aBrut: true,
@@ -41,7 +41,7 @@ export const TYPES: Record<
   },
   Arret: {
     label: 'Arrêt maladie / AT / maternité',
-    court: 'Arrêt',
+    court: 'Arrêt / maladie',
     tone: 'amber',
     unite: 'jours',
     aBrut: false,

@@ -19,6 +19,7 @@ Application en ligne : [mysteropodes.github.io/SImulateurIntermittece](https://m
 - **Types de lignes** : cachets, heures, enseignement, salarié hors spectacle, non salarié, arrêt (maladie, AT, maternité), formation ; contrats en annexe 8 et 10 mélangés
 - **Application installable** sur téléphone et utilisable hors connexion
 - **Export Excel** : classeur avec contrats, synthèse et suivi mensuel
+- **Aide et recours** : réclamation et médiateur France Travail, litiges employeur (inspection du travail, prud'hommes), permanences gratuites
 - Infobulles ⓘ sur tous les termes techniques, interface responsive
 
 ## Règles appliquées
@@ -40,7 +41,7 @@ exemples chiffrés du guide (`npm test`).
 | Activité dans le mois | jours de travail = heures / 8 (A8) ou / 10 (A10) ; seuil 26 j (A8) / 27 j (A10) → aucune ARE ; jours non indemnisables = ⌊jours × 1,4⌋ (A8) ou ⌊jours × 1,3⌋ (A10) |
 | Ordre des déductions | délai d'attente → forfait CP → forfait salaires → reliquats reportés |
 | Plafond de cumul | salaires bruts + ARE ≤ 118 % du PMSS (4 559,52 € en 2024, 4 631,50 € en 2025, 4 725,90 € en 2026) ; jours recalculés à l'entier supérieur |
-| Fin du droit | date anniversaire = début du droit + 12 mois |
+| Date anniversaire | 12 mois (365 jours) après la fin du contrat qui a ouvert le droit ; examen le lendemain, ou au premier jour sans contrat spectacle si un contrat est en cours ce jour-là (guide, exemple 13) |
 
 | Clause de rattrapage | 338 à 506 h + 5 ans d'ancienneté : 6 mois à la dernière AJ, franchises 2 + 2 j/mois non reportables |
 | AFD | 30 € nets/jour, 61 / 92 / 182 jours selon l'ancienneté (notice France Travail « Allocations de solidarité ») |

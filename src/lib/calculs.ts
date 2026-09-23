@@ -944,3 +944,59 @@ export function arrondi(n: number, dec = 2): number {
 export function euros(n: number): string {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(n);
 }
+
+// ---------------------------------------------------------------------------
+// Date anniversaire et examen des nouveaux droits (guide p. 9 et 18, exemple 13)
+// ---------------------------------------------------------------------------
+
+/** Date anniversaire = 12 mois (365 jours) après la fin du contrat qui a ouvert le droit. */
+export function dateAnniversaireDepuis(finContratOuverture: string): string {
+  return toISODate(addDays(parseDate(finContratOuverture), 365));
+}
+
+export interface ExamenAnniversaire {
+  /** Un contrat spectacle est en cours le jour de la date anniversaire. */
+  reporte: boolean;
+  /** Jour de l'examen : lendemain de la date anniversaire, ou premier jour sans contrat A8/A10. */
+  dateExamen: string;
+  /** Fin de contrat qui fixe le terme de la nouvelle période de référence. */
+  finContratRetenue: string | null;
+  /** Contrats spectacle en cours le jour de la date anniversaire (et ceux qui les prolongent sans jour chômé). */
+  contratsEnCours: Contrat[];
+}
+
+/**
+ * Examen à la date anniversaire : au lendemain si aucun contrat spectacle n'est
+ * en cours ce jour-là ; sinon au premier jour chômé qui suit (les contrats hors
+ * spectacle et l'activité non salariée ne reportent pas l'examen).
+ */
+export function examenAnniversaire(contrats: Contrat[], dateAnniversaire: string): ExamenAnniversaire {
+  const spectacle = contrats.filter(estSpectacle);
+  const couvre = (jour: string) => spectacle.filter((c) => c.date <= jour && finContrat(c) >= jour);
+  const enCours = couvre(dateAnniversaire);
+  if (enCours.length === 0) {
+    const avant = spectacle.map(finContrat).filter((f) => f <= dateAnniversaire);
+    return {
+      reporte: false,
+      dateExamen: toISODate(addDays(parseDate(dateAnniversaire), 1)),
+      finContratRetenue: avant.length ? avant.sort().slice(-1)[0] : null,
+      contratsEnCours: [],
+    };
+  }
+  const chaine = new Map(enCours.map((c) => [c.id, c]));
+  let jour = parseDate(dateAnniversaire);
+  for (let i = 0; i < 400; i++) {
+    const suivant = toISODate(addDays(jour, 1));
+    const actifs = couvre(suivant);
+    if (actifs.length === 0) break;
+    actifs.forEach((c) => chaine.set(c.id, c));
+    jour = addDays(jour, 1);
+  }
+  const finChaine = toISODate(jour);
+  return {
+    reporte: true,
+    dateExamen: toISODate(addDays(jour, 1)),
+    finContratRetenue: finChaine,
+    contratsEnCours: [...chaine.values()].sort((a, b) => a.date.localeCompare(b.date)),
+  };
+}
