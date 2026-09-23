@@ -1,7 +1,8 @@
 // Service worker : l'application fonctionne hors connexion après une première visite.
 // Pages : réseau d'abord (dernière version), cache en secours.
 // Fichiers statiques (JS, CSS, icônes, polices) : cache d'abord.
-const CACHE = 'intermittence-v4';
+// 20260923195504 est remplacé à chaque build (vite.config.ts) : l'application installée se met à jour seule.
+const CACHE = 'intermittence-20260923195504';
 const BASE = self.registration.scope;
 
 self.addEventListener('install', (e) => {
