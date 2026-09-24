@@ -19,8 +19,13 @@ const ExamenAnniversaire: React.FC<{ compact?: boolean }> = ({ compact }) => {
   // Scénario « sans travailler le jour J » : sans les contrats en cours ce jour-là
   const idsEnCours = new Set(ex.contratsEnCours.map((c) => c.id));
   const sans = data.contrats.filter((c) => !idsEnCours.has(c.id));
-  const finSans = sans.filter(estSpectacle).map(finContrat).filter((f) => f <= sim.dateAnniversaire).sort().slice(-1)[0];
-  const affSans = finSans ? affiliation(sans, data.annexe, finSans, opts) : null;
+  const finSans = sans
+    .filter(estSpectacle)
+    .map(finContrat)
+    .filter((f) => f <= sim.dateAnniversaire && (!sim.heuresApres || f > sim.heuresApres))
+    .sort()
+    .slice(-1)[0];
+  const affSans = finSans ? affiliation(sans, data.annexe, finSans, { ...opts, apres: sim.heuresApres }) : null;
   const affAvec = sim.affiliation;
   const aj = (a: typeof affAvec | null) => (a && a.eligible ? calculAJ(data.annexe, a.sr, a.nht).aj : null);
 

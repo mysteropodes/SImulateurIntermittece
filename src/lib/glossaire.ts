@@ -4,8 +4,8 @@ export const GLOSSAIRE = {
   ajNette:
     "AJ après retenues sociales : 0,93 % du salaire journalier moyen pour la retraite complémentaire, puis CSG et CRDS si l'AJ dépasse 60 €. L'impôt à la source est retiré ensuite.",
   abc: "AJ = A + B + C. A dépend de vos salaires, B de vos heures, C est une part fixe. Au-delà de 14 400 € (A) et de 720 h (B) en annexe 8, chaque euro ou heure en plus compte beaucoup moins.",
-  pra: "Période de référence : les 12 mois glissants avant la fin de votre dernier contrat. C'est là que France Travail cherche vos 507 heures et prend vos salaires.",
-  h507: "Pour ouvrir ou renouveler un droit, il faut 507 heures dans la période de référence. 1 cachet = 12 h. Les cours donnés comptent jusqu'à 70 h (120 h à 50 ans et plus).",
+  pra: "Période de référence : les 12 mois glissants avant la fin de votre dernier contrat. C'est là que France Travail cherche vos 507 heures et prend vos salaires. Pour le droit suivant, les heures qui ont déjà servi à ouvrir votre droit en cours ne comptent plus : le compteur repart de la fin du contrat qui l'a ouvert.",
+  h507: "Pour ouvrir ou renouveler un droit, il faut 507 heures dans la période de référence. 1 cachet = 12 h. Les cours donnés comptent jusqu'à 70 h (120 h à 50 ans et plus). Les heures déjà utilisées pour ouvrir votre droit en cours ne resservent pas.",
   nht: "Nombre d'heures travaillées retenues pour calculer l'AJ (partie B), après le plafond de 208 h par mois (250 h avec plusieurs employeurs) en annexe 8, ou 28 cachets en annexe 10. Les cours n'y comptent pas.",
   sr: "Salaire de référence : total de vos salaires bruts spectacle dans la période de référence (hors enseignement). Il fait la partie A de l'AJ.",
   sjm: "Salaire journalier moyen = salaire de référence ÷ (heures ÷ 8) en annexe 8, ÷ (heures ÷ 10) en annexe 10. Il sert pour la retenue retraite et la franchise salaires.",

@@ -349,6 +349,28 @@ export interface Affiliation {
 export interface OptionsAffiliation {
   /** 50 ans ou plus à la fin du contrat retenu : 120 h d'enseignement au lieu de 70. */
   plus50ans?: boolean;
+  /**
+   * Fin du contrat qui a ouvert le droit en cours : pour le réexamen, seules les heures
+   * postérieures comptent (« seules sont retenues les heures n'ayant pas déjà été prises
+   * en compte au titre d'une précédente ouverture de droits ou réadmission »).
+   */
+  apres?: string;
+}
+
+/** Part d'un contrat comprise entre deux dates (heures et salaire au prorata des jours). */
+function rogner(c: Contrat, debut: string, fin: string): Contrat {
+  const f = finContrat(c);
+  if (c.date >= debut && f <= fin) return c;
+  const total = joursEntre(c, c.date, f);
+  const dedans = joursEntre(c, debut, fin);
+  const r = total > 0 ? dedans / total : 0;
+  return {
+    ...c,
+    date: c.date > debut ? c.date : debut,
+    dateFin: f < fin ? f : fin,
+    nombre: c.type === 'Arret' ? dedans : c.nombre * r,
+    brut: c.brut * r,
+  };
 }
 
 /**
@@ -362,7 +384,11 @@ export function affiliation(
   options: OptionsAffiliation = {}
 ): Affiliation {
   const periode = periodeReference(contrats, dateFinContrat);
-  const retenus = contrats.filter((c) => finContrat(c) >= periode.debut && c.date <= periode.fin);
+  if (options.apres && options.apres >= periode.debut) periode.debut = toISODate(addDays(parseDate(options.apres), 1));
+  const retenus =
+    periode.debut > periode.fin
+      ? []
+      : contrats.filter((c) => finContrat(c) >= periode.debut && c.date <= periode.fin).map((c) => rogner(c, periode.debut, periode.fin));
   const cleDebut = periode.debut.slice(0, 7);
   const cleFin = periode.fin.slice(0, 7);
 
@@ -970,12 +996,13 @@ export interface ExamenAnniversaire {
  * en cours ce jour-là ; sinon au premier jour chômé qui suit (les contrats hors
  * spectacle et l'activité non salariée ne reportent pas l'examen).
  */
-export function examenAnniversaire(contrats: Contrat[], dateAnniversaire: string): ExamenAnniversaire {
+export function examenAnniversaire(contrats: Contrat[], dateAnniversaire: string, apres?: string): ExamenAnniversaire {
   const spectacle = contrats.filter(estSpectacle);
   const couvre = (jour: string) => spectacle.filter((c) => c.date <= jour && finContrat(c) >= jour);
   const enCours = couvre(dateAnniversaire);
   if (enCours.length === 0) {
-    const avant = spectacle.map(finContrat).filter((f) => f <= dateAnniversaire);
+    // une nouvelle fin de contrat, postérieure à celle qui a ouvert le droit en cours
+    const avant = spectacle.map(finContrat).filter((f) => f <= dateAnniversaire && (!apres || f > apres));
     return {
       reporte: false,
       dateExamen: toISODate(addDays(parseDate(dateAnniversaire), 1)),

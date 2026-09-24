@@ -72,7 +72,7 @@ const ExportExcelPage: React.FC = () => {
         ['Heures d\'enseignement (retenues / total)', `${Math.round(a.heuresEnseignementRetenues * 10) / 10} / ${Math.round(a.heuresEnseignement * 10) / 10}`],
         ['Salaire de référence (SR)', Math.round(a.sr * 100) / 100],
         ['Jours de travail', Math.round(a.joursTravail * 100) / 100],
-        ['Salaire journalier moyen (SJM)', Math.round(sim.sjm * 100) / 100],
+        ['Salaire journalier moyen du droit en cours (SJM)', Math.round(sim.sjm * 100) / 100],
         ['Statut', a.eligible ? 'Éligible ARE' : `Non éligible (manque ${Math.ceil(a.heuresManquantes)} h)`],
         ['', ''],
         ['ALLOCATION JOURNALIÈRE', ''],

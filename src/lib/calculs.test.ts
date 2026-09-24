@@ -525,3 +525,25 @@ describe('date anniversaire et examen (guide p. 9, 18, exemple 13)', () => {
     expect(e.dateExamen).toBe('2023-09-02');
   });
 });
+
+
+describe('découpage au jour près', () => {
+  it('un contrat à cheval sur le début de la période ne compte que pour sa part', () => {
+    // 10 jours du 26/08 au 04/09, période qui commence le 01/09 → 4 jours sur 10
+    const a = affiliation([contrat({ id: 'x', date: '2025-08-26', dateFin: '2025-09-04', type: 'Heures', nombre: 100, brut: 2000 })], 'A8', '2026-08-31');
+    expect(a.periode.debut).toBe('2025-09-01');
+    expect(a.nht).toBeCloseTo(40, 6);
+    expect(a.sr).toBeCloseTo(800, 6);
+  });
+
+  it('option « après » : exclut le jour de fin du contrat d’ouverture et ce qui précède', () => {
+    const cs = [
+      contrat({ id: 'avant', date: '2026-07-01', dateFin: '2026-07-31', type: 'Heures', nombre: 150, brut: 4000 }),
+      contrat({ id: 'apres', date: '2026-08-03', dateFin: '2026-08-07', type: 'Heures', nombre: 35, brut: 1000 }),
+    ];
+    const a = affiliation(cs, 'A8', '2026-08-07', { apres: '2026-07-31' });
+    expect(a.periode.debut).toBe('2026-08-01');
+    expect(a.contrats.map((x) => x.id)).toEqual(['apres']);
+    expect(a.heuresAffiliation).toBe(35);
+  });
+});

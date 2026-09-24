@@ -53,6 +53,12 @@ export interface Simulation {
   examen: ExamenAnniversaire;
   /** Début du prochain droit si réadmission (jour de l'examen). */
   dateReexamen: string;
+  /** Fin du contrat d'ouverture : seules les heures postérieures comptent pour le prochain droit. */
+  heuresApres?: string;
+  /** Période qui a ouvert le droit en cours (null si aucun droit en cours saisi). */
+  affOuverture: Affiliation | null;
+  /** AJ calculée sur la période d'ouverture (0 si ces contrats ne sont pas saisis). */
+  ajOuverture: number;
   suivi: ResultatSuivi;
   projection: Projection;
   paliers: Paliers;
@@ -77,24 +83,37 @@ export function simulation(data: IntermittenceData, aujourdHui = new Date()): Si
   const finContratOuverture = data.dateFinContrat || toISODate(addDays(parseDate(dateIndem), -1));
   const dateAnniversaire = dateAnniversaireDepuis(finContratOuverture);
   const dateFinDroit = dateAnniversaire;
-  const examen = examenAnniversaire(data.contrats, dateAnniversaire);
+  // Droit en cours saisi : les heures qui l'ont ouvert ne resservent pas pour le suivant
+  const droitEnCours = !!(data.dateIndem || data.dateFinContrat) && !data.dateFinPRA;
+  const heuresApres = droitEnCours ? finContratOuverture : undefined;
+  const examen = examenAnniversaire(data.contrats, dateAnniversaire, heuresApres);
 
-  // Période de référence du réexamen : jusqu'à la fin de contrat retenue à la date anniversaire
-  const aff = affiliation(data.contrats, data.annexe, data.dateFinPRA || examen.finContratRetenue || undefined, opts);
+  // Période de référence du réexamen : jusqu'à la nouvelle fin de contrat retenue (ou la date anniversaire s'il n'y en a pas encore)
+  const finPRA = data.dateFinPRA || examen.finContratRetenue || (heuresApres ? dateAnniversaire : undefined);
+  const aff = affiliation(data.contrats, data.annexe, finPRA, { ...opts, apres: heuresApres });
+  // AJ du prochain droit (réexamen), sur les heures faites depuis l'ouverture
   const ajCalculee = calculAJ(data.annexe, aff.sr, aff.nht);
-  const sjmValeur = sjm(data.annexe, aff.sr, aff.nht);
-  const smic = smicAt(aff.periode.fin);
+
+  // Droit en cours : il repose sur la période qui l'a ouvert (AJ, franchises, retenue retraite)
+  const affOuverture = droitEnCours ? affiliation(data.contrats, data.annexe, finContratOuverture, opts) : null;
+  const affDroit = affOuverture ?? aff;
+  // Contrats d'ouverture non saisis : SJM approché sur les contrats saisis (pour la seule retenue retraite)
+  const affSJM = affOuverture && affOuverture.nht > 0 ? affOuverture : aff;
+  const ajOuverture = affOuverture && affOuverture.eligible ? calculAJ(data.annexe, affOuverture.sr, affOuverture.nht).aj : 0;
+  const sjmValeur = sjm(data.annexe, affSJM.sr, affSJM.nht);
+  const smic = smicAt(affDroit.periode.fin);
 
   const ajNotifiee = toNum(data.ajBruteNotifiee);
   const sourceAJ = ajNotifiee > 0 ? 'notifiee' : 'calculee';
-  const ajBrute = sourceAJ === 'notifiee' ? ajNotifiee : aff.eligible ? ajCalculee.aj : 0;
+  const ajBrute = sourceAJ === 'notifiee' ? ajNotifiee : droitEnCours ? ajOuverture : aff.eligible ? ajCalculee.aj : 0;
   const retenues = ajNette(ajBrute, sjmValeur, toNum(data.tauxCSG, 6.2) / 100);
   const ratioNetAJ = ajBrute > 0 ? retenues.net / ajBrute : 1;
   const ratioNetSalaire = 1 - Math.min(100, Math.max(0, toNum(data.tauxCotisationsSalaire, 22))) / 100;
 
-  const franchiseCPAuto = franchiseCP(aff.joursTravail);
+  // franchises du droit en cours : calculées sur la période qui l'a ouvert
+  const franchiseCPAuto = franchiseCP(affDroit.joursTravail);
   // « salaires de la PRA » = toutes rémunérations, enseignement compris ; le SJM reste sur le SR
-  const franchiseSalAuto = franchiseSalaires(aff.srBrut + aff.brutEnseignement + aff.brutAutres, sjmValeur, smic, 12);
+  const franchiseSalAuto = franchiseSalaires(affDroit.srBrut + affDroit.brutEnseignement + affDroit.brutAutres, sjmValeur, smic, 12);
   let fcp = franchiseCPAuto;
   let fsal = franchiseSalAuto;
   if (!data.franchisesAuto) {
@@ -146,6 +165,9 @@ export function simulation(data: IntermittenceData, aujourdHui = new Date()): Si
     dateFinDroit,
     examen,
     dateReexamen: examen.dateExamen,
+    heuresApres,
+    affOuverture,
+    ajOuverture,
     suivi,
     projection,
   };

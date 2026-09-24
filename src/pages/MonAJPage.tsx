@@ -56,7 +56,7 @@ const MonAJPage: React.FC = () => {
             <Field label="Indemnisable à partir du" aide="dateAnniversaire" hint="Début du droit en cours.">
               <input type="date" value={data.dateIndem} onChange={(e) => updateField('dateIndem', e.target.value)} className="input" />
             </Field>
-            <Field label="Fin du contrat ayant ouvert le droit" hint="Facultatif : début du droit = lendemain.">
+            <Field label="Fin du contrat ayant ouvert le droit" hint="Les heures jusqu'à cette date ont servi à ouvrir le droit : elles ne comptent plus pour le suivant.">
               <input type="date" value={data.dateFinContrat} onChange={(e) => updateField('dateFinContrat', e.target.value)} className="input" />
             </Field>
           </div>
@@ -165,6 +165,12 @@ const MonAJPage: React.FC = () => {
           }
           bodyClassName="p-5"
         >
+          {data.franchisesAuto && sim.affOuverture && sim.affOuverture.heuresAffiliation === 0 && (
+            <p className="mb-4 rounded-2xl bg-amber-50 p-3 text-xs text-amber-900">
+              Les contrats qui ont ouvert votre droit (avant le {formatDateFR(sim.affOuverture.periode.fin)}) ne sont pas saisis : les franchises ne peuvent pas être
+              calculées. Saisissez ces contrats, ou passez en « Notification » et recopiez les franchises de votre courrier France Travail.
+            </p>
+          )}
           {data.franchisesAuto ? (
             <dl className="space-y-4 text-sm">
               <div>
@@ -177,7 +183,7 @@ const MonAJPage: React.FC = () => {
                   </dd>
                 </div>
                 <p className="mt-1 text-xs text-slate-500">
-                  ⌊{nb(aff.joursTravail, 1)} jours travaillés × 2,5 / 24⌋, 30 j max ; 2 j/mois jusqu'à 24 j, 3 j au-delà.
+                  ⌊{nb((sim.affOuverture ?? aff).joursTravail, 1)} jours travaillés{sim.affOuverture ? ' (période qui a ouvert le droit)' : ''} × 2,5 / 24⌋, 30 j max ; 2 j/mois jusqu'à 24 j, 3 j au-delà.
                 </p>
               </div>
               <div>
