@@ -40,14 +40,14 @@ const TableauDeBordPage: React.FC = () => {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi
-          label="Heures sur 12 mois"
+          label={sim.heuresApres ? 'Heures pour le prochain droit' : 'Heures sur 12 mois'}
           aide="h507"
           value={`${nb(aff.heuresAffiliation, 0)} h`}
-          sub={`sur ${SEUIL_HEURES} h requises`}
+          sub={sim.heuresApres ? `depuis le ${formatDateFR(aff.periode.debut)}, sur ${SEUIL_HEURES} h` : `sur ${SEUIL_HEURES} h requises`}
           tone={aff.eligible ? 'green' : 'amber'}
           footer={<Progress value={aff.heuresAffiliation} max={SEUIL_HEURES} tone={aff.eligible ? 'green' : 'amber'} />}
         />
-        <Kpi aide="sjm" label="Jours de travail" value={nb(aff.joursTravail, 1)} sub={`NHT / ${data.annexe === 'A8' ? 8 : 10}`} footer={<>SJM : {eur(sim.sjm)}</>} />
+        <Kpi aide="sjm" label="Jours de travail" value={nb(aff.joursTravail, 1)} sub={`NHT / ${data.annexe === 'A8' ? 8 : 10}`} footer={<>SJM : {eur(aff.nht > 0 ? aff.sr / (aff.nht / (data.annexe === 'A8' ? 8 : 10)) : 0)}</>} />
         <Kpi
           label="Allocation journalière"
           aide="aj"

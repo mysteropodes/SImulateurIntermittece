@@ -102,7 +102,15 @@ const Tableau: React.FC = () => {
           value={sim.ajBrute > 0 ? eur(sim.ajBrute) : 'Non éligible'}
           sub={sim.ajBrute > 0 ? `${eur(sim.retenues.net * (1 - tauxPAS))} versés par jour indemnisé` : `Seuil de ${SEUIL_HEURES} h non atteint`}
           icon={<Euro className="h-4 w-4" />}
-          footer={sim.sourceAJ === 'notifiee' ? <>AJ de votre notification · recalculée sur vos contrats actuels : {eur(ajCalculee.aj)}</> : 'AJ calculée sur vos contrats'}
+          footer={
+            sim.sourceAJ === 'notifiee'
+              ? 'AJ de votre notification'
+              : sim.affOuverture
+                ? sim.ajOuverture > 0
+                  ? 'Calculée sur les contrats qui ont ouvert votre droit'
+                  : 'Saisissez l’AJ de votre notification (Mon droit) ou les contrats qui ont ouvert votre droit'
+                : 'AJ calculée sur vos contrats'
+          }
         />
         <Kpi
           variant="lime"
@@ -120,7 +128,7 @@ const Tableau: React.FC = () => {
         />
         <div className="flex flex-col rounded-4xl bg-white p-5 sm:p-6">
           <p className="flex items-center gap-1.5 text-sm text-slate-500">
-            Heures sur 12 mois <Aide terme="h507" />
+            {sim.heuresApres ? 'Heures pour le prochain droit' : 'Heures sur 12 mois'} <Aide terme="h507" />
           </p>
           <div className="mt-3 flex items-center gap-4">
             <Ring value={aff.heuresAffiliation} max={SEUIL_HEURES} size={92} stroke={9}>
@@ -133,7 +141,10 @@ const Tableau: React.FC = () => {
           </div>
           <div className="mt-auto pt-4 text-xs text-slate-500">
             <div className="flex items-center gap-1.5 border-t border-slate-100 pt-3">
-              du {formatDateFR(aff.periode.debut)} au {formatDateFR(aff.periode.fin)} <Aide terme="pra" />
+              {sim.heuresApres
+                ? `faites depuis le ${formatDateFR(aff.periode.debut)}`
+                : `du ${formatDateFR(aff.periode.debut)} au ${formatDateFR(aff.periode.fin)}`}{' '}
+              <Aide terme="pra" />
             </div>
           </div>
         </div>
@@ -143,13 +154,18 @@ const Tableau: React.FC = () => {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi label="Date anniversaire" aide="dateAnniversaire" value={formatDateFR(sim.dateAnniversaire)} sub={`dans ${joursRestants} jours`} icon={<Calendar className="h-4 w-4" />} />
-        <Kpi label="Salaire de référence" aide="sr" value={eur(aff.sr, 0)} sub="bruts dans la période" />
-        <Kpi label="Heures pour l'AJ" aide="nht" value={`${nb(aff.nht, 0)} h`} sub={`${nb(aff.joursTravail, 1)} jours de travail`} />
+        <Kpi label="Salaire de référence" aide="sr" value={eur(aff.sr, 0)} sub={sim.heuresApres ? 'du prochain droit, depuis l’ouverture' : 'bruts dans la période'} />
+        <Kpi label="Heures pour l'AJ" aide="nht" value={`${nb(aff.nht, 0)} h`} sub={`${nb(aff.joursTravail, 1)} jours de travail${sim.heuresApres ? ' · prochain droit' : ''}`} />
         <Kpi label="Franchises" aide="franchiseCP" value={`${sim.franchiseCP.total + sim.franchiseSal.total + (data.delaiAttente ? 7 : 0)} j`} sub={`${data.delaiAttente ? 'délai 7 · ' : ''}CP ${sim.franchiseCP.total} · salaires ${sim.franchiseSal.total}`} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
-        <Card title="Calcul de l'AJ" aide="abc" icon={<Euro className="h-4 w-4" />} className="lg:col-span-5">
+        <Card
+          title={sim.heuresApres ? `Prochain droit : AJ si réexamen au ${formatDateFR(sim.dateReexamen)}` : "Calcul de l'AJ"}
+          aide="abc"
+          icon={<Euro className="h-4 w-4" />}
+          className="lg:col-span-5"
+        >
           {aff.eligible ? (
             <>
               <div className="flex h-3 overflow-hidden rounded-full">
@@ -177,8 +193,10 @@ const Tableau: React.FC = () => {
               )}
             </>
           ) : (
-            <Notice tone="error" icon={<AlertCircle className="h-4 w-4" />} title="Seuil non atteint">
-              Il vous manque {nb(aff.heuresManquantes, 1)} h pour atteindre {SEUIL_HEURES} h dans la période de référence.
+            <Notice tone={sim.heuresApres ? 'warn' : 'error'} icon={<AlertCircle className="h-4 w-4" />} title={sim.heuresApres ? 'Pas encore 507 h pour le prochain droit' : 'Seuil non atteint'}>
+              {sim.heuresApres
+                ? `${nb(aff.heuresAffiliation, 1)} h faites depuis le ${formatDateFR(aff.periode.debut)} : il en manque ${nb(aff.heuresManquantes, 1)} d'ici la date anniversaire (${formatDateFR(sim.dateAnniversaire)}). Votre droit en cours n'est pas concerné.`
+                : `Il vous manque ${nb(aff.heuresManquantes, 1)} h pour atteindre ${SEUIL_HEURES} h dans la période de référence.`}
               {sim.projection.moisEstimes
                 ? ` Au rythme des 3 derniers mois (${nb(sim.projection.moyenneHeuresParMois, 0)} h/mois), environ ${sim.projection.moisEstimes} mois.`
                 : ''}

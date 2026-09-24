@@ -45,7 +45,8 @@ du guide France Travail (`npm test`).
 
 | Règle | Détail |
 |---|---|
-| Affiliation | 507 h sur les 12 mois précédant la fin du dernier contrat spectacle ; 1 cachet = 12 h ; plafond mensuel 208 h (250 h multi-employeurs) en annexe 8, 28 cachets en annexe 10 |
+| Affiliation | 507 h sur les 12 mois précédant la fin du dernier contrat spectacle ; 1 cachet = 12 h ; plafond mensuel 208 h (250 h multi-employeurs) en annexe 8, 28 cachets en annexe 10 ; pour le droit suivant, les heures qui ont déjà servi à ouvrir le droit en cours ne comptent plus |
+| Droit en cours / prochain droit | l'AJ calculée, les franchises et la retenue retraite du droit en cours viennent de la période qui l'a ouvert ; le compteur des 507 h et l'AJ projetée portent sur les heures faites depuis |
 | Enseignement | compte pour les 507 h (70 h max, 120 h à 50 ans et plus), mais ni dans les heures (partie B) ni dans le salaire (partie A) de l'AJ ; reste une activité du mois |
 | Périodes assimilées | arrêt hors contrat (maladie longue, accident du travail, maternité) : 5 h/jour pour les 507 h et l'AJ, salaire de référence aménagé, pas d'ARE ces jours-là ; formation + cours ≤ 338 h |
 | Annexes mixtes | droit ouvert dans l'annexe qui a le plus d'heures (guide, exemple 3) |

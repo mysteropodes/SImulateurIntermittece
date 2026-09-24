@@ -58,9 +58,9 @@ const ContratsPage: React.FC = () => {
         <Kpi
           variant="dark"
           aide="h507"
-          label="Heures pour les 507 h"
+          label={sim.heuresApres ? 'Heures pour le prochain droit' : 'Heures pour les 507 h'}
           value={`${nb(aff.heuresAffiliation, 1)} h`}
-          sub={aff.eligible ? 'Seuil atteint' : `Il manque ${nb(aff.heuresManquantes, 1)} h`}
+          sub={`${sim.heuresApres ? `depuis le ${formatDateFR(aff.periode.debut)} · ` : ''}${aff.eligible ? 'seuil atteint' : `il manque ${nb(aff.heuresManquantes, 1)} h`}`}
         />
         <Kpi aide="nht" label="Heures pour l'AJ" value={`${nb(aff.nht, 1)} h`} sub={aff.heuresArret > 0 ? `dont ${nb(aff.heuresArret)} h d'arrêt` : 'spectacle'} />
         <Kpi
@@ -101,7 +101,7 @@ const ContratsPage: React.FC = () => {
                 <th className="px-2 py-3 text-right">
                   <span className="inline-flex items-center gap-1">
                     Heures
-                    <Aide texte="Vert : compte pour les 507 h (dans la période de référence). Gris : hors période. Barré : ne compte pas pour les 507 h (hors spectacle, non salarié). En dessous, le taux horaire brut." />
+                    <Aide texte="Vert : compte pour les 507 h du prochain droit. Gris : hors période, ou déjà utilisé pour ouvrir votre droit en cours. Barré : ne compte pas pour les 507 h (hors spectacle, non salarié). En dessous, le taux horaire brut." />
                   </span>
                 </th>
                 <th className="w-10 px-2 py-3"></th>
@@ -225,7 +225,7 @@ const ContratsPage: React.FC = () => {
                             <span className="block pr-3 text-right text-slate-300">—</span>
                           )}
                         </td>
-                        <td className="num px-2 py-1.5 text-right" title={!compte ? 'Ne compte pas pour les 507 h' : inPRA ? 'Compte pour les 507 h' : 'Hors période de référence'}>
+                        <td className="num px-2 py-1.5 text-right" title={!compte ? 'Ne compte pas pour les 507 h' : inPRA ? 'Compte pour les 507 h du prochain droit' : sim.heuresApres && c.date <= sim.heuresApres ? 'Déjà utilisé pour ouvrir votre droit en cours' : 'Hors période de référence'}>
                           <span
                             className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                               !compte ? 'bg-slate-100 text-slate-400 line-through' : inPRA ? 'bg-lime-200 text-brand-900' : 'bg-slate-100 text-slate-500'
