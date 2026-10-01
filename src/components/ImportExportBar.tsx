@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { useIntermittence } from '../context/IntermittenceContext';
+import { useIntermittence, IMPORT_MAX_OCTETS } from '../context/IntermittenceContext';
 import { Upload, Download, RotateCcw } from 'lucide-react';
 
 /** Actions sur les données (export / import JSON, réinitialisation), affichées dans la barre latérale. */
@@ -10,6 +10,11 @@ const ImportExportBar: React.FC<{ compact?: boolean }> = ({ compact }) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > IMPORT_MAX_OCTETS) {
+      alert("Ce fichier est trop volumineux pour être un export du simulateur.");
+      e.target.value = '';
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;

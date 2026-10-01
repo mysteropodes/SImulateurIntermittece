@@ -76,9 +76,13 @@ SMIC, plafond de la Sécurité sociale) sont dans des tables de `src/lib/calculs
 
 ## Protection des données
 
-- Les données sont conservées uniquement dans votre navigateur (`localStorage`) — rien n'est envoyé à un serveur.
-- Exportez-les en JSON pour les sauvegarder ou les transférer, réimportez-les sur un autre poste. Les exports des anciennes versions sont acceptés.
-- Aucun cookie ni traqueur.
+- Les données restent dans votre navigateur (`localStorage`) : rien n'est envoyé à un serveur, aucun compte n'est demandé.
+- Aucun cookie, aucun traqueur, aucune requête vers un tiers : la police est hébergée avec le site et une politique
+  de sécurité du contenu (CSP) interdit tout script ou appel réseau extérieur.
+- Le site est servi par GitHub Pages, qui voit l'adresse IP des visiteurs comme n'importe quel hébergeur.
+- Les données ne sont pas chiffrées sur l'appareil : sur un ordinateur partagé, cliquez sur « Réinitialiser » en partant.
+- L'export JSON contient vos contrats et salaires en clair : rangez-le comme un document personnel.
+- Un fichier importé est vérifié champ par champ (dates, types, tailles) avant d'être chargé.
 
 ## Développement
 

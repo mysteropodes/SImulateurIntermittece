@@ -33,7 +33,7 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  if (url.href.startsWith(BASE) || url.hostname.endsWith('fonts.googleapis.com') || url.hostname.endsWith('fonts.gstatic.com')) {
+  if (url.href.startsWith(BASE)) {
     e.respondWith(
       caches.match(req).then(
         (hit) =>

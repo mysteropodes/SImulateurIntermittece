@@ -172,6 +172,22 @@ const num = (v: unknown, fallback: number): number => {
 
 const str = (v: unknown, fallback = ''): string => (typeof v === 'string' ? v : v == null ? fallback : String(v));
 
+/** Limites d'un fichier importé : au-delà, il ne s'agit pas d'un export du simulateur. */
+export const IMPORT_MAX_OCTETS = 2_000_000;
+const MAX_CONTRATS = 5000;
+const MAX_DROITS = 200;
+const MAX_TEXTE = 200;
+
+/** Date AAAA-MM-JJ valide, sinon '' : une date mal formée ferait planter les calculs. */
+const date = (v: unknown): string => {
+  const s = str(v).trim();
+  const fr = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s);
+  const iso = fr ? `${fr[3]}-${fr[2]}-${fr[1]}` : s.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return '';
+  const t = new Date(`${iso}T00:00:00Z`);
+  return !Number.isNaN(t.getTime()) && t.toISOString().slice(0, 10) === iso ? iso : '';
+};
+
 /**
  * Accepte les JSON de la v1 (annexe en libellé, ajBrute/ajNette…) comme de la v2,
  * et remet chaque champ dans un état sûr.
@@ -183,26 +199,26 @@ export function migrate(raw: unknown): IntermittenceData {
   const annexeRaw = str(r.annexe, 'A8');
   const annexe: Annexe = annexeRaw === 'A10' || /10|artiste/i.test(annexeRaw) ? 'A10' : 'A8';
 
-  const contratsRaw = Array.isArray(r.contrats) ? r.contrats : [];
+  const contratsRaw = Array.isArray(r.contrats) ? r.contrats.slice(0, MAX_CONTRATS) : [];
   const contrats: Contrat[] = contratsRaw
     .filter((c): c is Record<string, unknown> => !!c && typeof c === 'object')
     .map((c) => ({
-      id: str(c.id) || newId(),
-      date: str(c.date) || new Date().toISOString().slice(0, 10),
-      dateFin: str(c.dateFin) || undefined,
-      employeur: str(c.employeur),
+      id: str(c.id).slice(0, 64) || newId(),
+      date: date(c.date) || new Date().toISOString().slice(0, 10),
+      dateFin: date(c.dateFin) || undefined,
+      employeur: str(c.employeur).slice(0, MAX_TEXTE),
       type: TYPES.includes(c.type as TypeContrat) ? (c.type as TypeContrat) : 'Heures',
       annexe: c.annexe === 'A8' || c.annexe === 'A10' ? c.annexe : undefined,
       nombre: Math.max(0, num(c.nombre, 0)),
       brut: Math.max(0, num(c.brut, 0)),
     }));
 
-  const historiqueRaw = Array.isArray(r.historique) ? r.historique : [];
+  const historiqueRaw = Array.isArray(r.historique) ? r.historique.slice(0, MAX_DROITS) : [];
   const historique: DroitPasse[] = historiqueRaw
-    .filter((h): h is Record<string, unknown> => !!h && typeof h === 'object' && typeof h.dateDebut === 'string')
+    .filter((h): h is Record<string, unknown> => !!h && typeof h === 'object' && !!date(h.dateDebut))
     .map((h) => ({
-      id: str(h.id) || newId(),
-      dateDebut: str(h.dateDebut),
+      id: str(h.id).slice(0, 64) || newId(),
+      dateDebut: date(h.dateDebut),
       ajBrute: Math.max(0, num(h.ajBrute, 0)),
       heures: h.heures == null || h.heures === '' ? undefined : Math.max(0, num(h.heures, 0)),
       salaires: h.salaires == null || h.salaires === '' ? undefined : Math.max(0, num(h.salaires, 0)),
@@ -214,9 +230,9 @@ export function migrate(raw: unknown): IntermittenceData {
   return {
     version: 2,
     annexe,
-    dateFinContrat: str(r.dateFinContrat),
-    dateFinPRA: str(r.dateFinPRA),
-    dateIndem: str(r.dateIndem),
+    dateFinContrat: date(r.dateFinContrat),
+    dateFinPRA: date(r.dateFinPRA),
+    dateIndem: date(r.dateIndem),
     delaiAttente: !!r.delaiAttente,
     plus50ans: !!r.plus50ans,
     multiAnnexe: !!r.multiAnnexe,
@@ -238,7 +254,7 @@ export function migrate(raw: unknown): IntermittenceData {
         ancienneteAns: Math.max(0, num(p.ancienneteAns, 0)),
         cinqAnsSur10: !!p.cinqAnsSur10,
         afdDeja: Math.max(0, Math.floor(num(p.afdDeja, 0))),
-        congeDebut: str(p.congeDebut),
+        congeDebut: date(p.congeDebut),
         congeType: str(p.congeType, 'maternite-1-2') || 'maternite-1-2',
       };
     })(),

@@ -62,4 +62,28 @@ describe('données d’exemple', () => {
   it('un fichier importé n’est pas un exemple', () => {
     expect(migrate({ contrats: [] }).exemple).toBe(false);
   });
+
+  it('neutralise un fichier piégé : dates invalides, textes géants, listes énormes, __proto__', () => {
+    const fichier = JSON.stringify({
+      dateIndem: 'pas une date',
+      dateFinContrat: '2025-02-30',
+      dateFinPRA: '31/12/2025',
+      contrats: [
+        { date: '<script>', dateFin: 'x', employeur: 'A'.repeat(10_000), type: 'Heures', nombre: 10, brut: 100 },
+        ...Array.from({ length: 6000 }, () => ({ date: '2025-01-01', nombre: 1, brut: 1 })),
+      ],
+      historique: [{ dateDebut: 'n/a', ajBrute: 50 }, { dateDebut: '2024-03-02', ajBrute: 60 }],
+    }).replace('{', '{"__proto__":{"pollue":true},');
+    const m = migrate(JSON.parse(fichier));
+    expect(m.dateIndem).toBe('');
+    expect(m.dateFinContrat).toBe('');
+    expect(m.dateFinPRA).toBe('2025-12-31');
+    expect(m.contrats[0].date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(m.contrats[0].dateFin).toBeUndefined();
+    expect(m.contrats[0].employeur.length).toBe(200);
+    expect(m.contrats.length).toBe(5000);
+    expect(m.historique.map((h) => h.dateDebut)).toEqual(['2024-03-02']);
+    expect(({} as Record<string, unknown>).pollue).toBeUndefined();
+    expect((m as unknown as Record<string, unknown>).pollue).toBeUndefined();
+  });
 });
