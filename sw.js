@@ -1,8 +1,8 @@
 // Service worker : l'application fonctionne hors connexion après une première visite.
 // Pages : réseau d'abord (dernière version), cache en secours.
 // Fichiers statiques (JS, CSS, icônes, polices) : cache d'abord.
-// 20260924160324 est remplacé à chaque build (vite.config.ts) : l'application installée se met à jour seule.
-const CACHE = 'intermittence-20260924160324';
+// 20261001060412 est remplacé à chaque build (vite.config.ts) : l'application installée se met à jour seule.
+const CACHE = 'intermittence-20261001060412';
 const BASE = self.registration.scope;
 
 self.addEventListener('install', (e) => {
@@ -33,7 +33,7 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  if (url.href.startsWith(BASE) || url.hostname.endsWith('fonts.googleapis.com') || url.hostname.endsWith('fonts.gstatic.com')) {
+  if (url.href.startsWith(BASE)) {
     e.respondWith(
       caches.match(req).then(
         (hit) =>
